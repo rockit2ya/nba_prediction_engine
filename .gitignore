@@ -1,0 +1,4 @@
+nba_predict/
+__pycache__/
+*.pyc
+.DS_Store
