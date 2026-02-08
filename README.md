@@ -70,6 +70,11 @@ python nba_engine_ui.py
 
 ```
 
+### **VS Code YouTube Tutorials**
+
+- [How to Set Up Python Development in VS Code on Mac](https://www.youtube.com/watch?v=4CJHjqZfH7A) -  This video provides a clear walkthrough for setting up a virtual environment and running Python scripts on macOS, which is essential for getting your NBA engine running smoothly.
+- [How to Run Python in Visual Studio Code on Windows 10/11](http://www.youtube.com/watch?v=mIVB-SNycKI) - Step-by-step guide you on how to run Python in Visual Studio Code on Windows 10/11 + Python for Python Developers on Windows 10/11 OS. 
+
 ---
 
 ## 🏁 Pro Troubleshooting
@@ -78,8 +83,6 @@ python nba_engine_ui.py
 - **Connection Error:** If the NBA blocks your Wi-Fi, toggle your iPhone's **Airplane Mode** for 5 seconds to reset your hotspot's IP address.
 - **Missing Data:** If the CSV isn't updating, ensure you have "Write" permissions for the folder you opened in VS Code.
 
-[How to Set Up Python Development in VS Code on Mac](https://www.youtube.com/watch?v=4CJHjqZfH7A)
-This video provides a clear walkthrough for setting up a virtual environment and running Python scripts on macOS, which is essential for getting your NBA engine running smoothly.
 
 ---
 
