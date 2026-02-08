@@ -17,8 +17,7 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 
 ### **Project Structure**
 
-ķ `nba_engine_ui.py`: The interactive terminal interface.
-
+- `nba_engine_ui.py`: The interactive terminal interface.
 - `nba_analytics.py`: The logic core, mathematical models, and API scrapers.
 - `nba_stats_cache.json`: Local storage for 10-game rolling averages (created automatically).
 - `bet_tracker_YYYY-MM-DD.csv`: Automated logging of every pick and edge calculation.
