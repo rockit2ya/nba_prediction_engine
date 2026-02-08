@@ -1,97 +1,163 @@
-## 🏀 NBA Prediction Engine
+# 🏀 NBA Predictive Analytics Engine (v3.0)
 
-A high-performance Python-based analytical tool designed to identify betting edges in the NBA. This engine moves beyond basic win/loss records, utilizing the **Four-Factor Model** and a proprietary **Fatigue Adjuster** to account for the unique rigors of the NBA schedule.
+This README covers the features, technical architecture, mathematical modeling, and deployment steps for the NBA Prediction Engine (engine).
+
+### **Overview**
+
+The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fidelity point spread predictions. Unlike basic models that use season averages, this engine prioritizes "Current Form" and "Immediate Context" to find market inefficiencies. It leverages the **NBA's Four-Factors** and advanced efficiency ratings to calculate a "Fair Line" (Projected Spread) for daily matchups. Unlike basic models that rely on season averages, this engine incorporates real-time injury scraping, fatigue adjustments (Back-to-Backs), and dynamic home-court weighting.
+
+### **Key Pro Features**
+
+- **Situational Modeling:** Factors in Back-to-Back (B2B) fatigue and dynamic Home Court Advantage (HCA).
+- **Bayesian Star Tax:** Uses individual "On-Off" metrics weighted by official injury status (OUT, GTD, Doubtful).
+- **Live Scoreboard V3:** High-reliability connection to real-time game schedules and scores.
+- **Optimized Performance:** Multi-threaded API calls and persistent sessions for sub-2-second analysis.
+- **Kelly Criterion Integration:** Calculates conservative bankroll risk for every edge found.
+- **Emergency Fallback:** Continues working even if the NBA API is down using baseline league data.
+
+### **Project Structure**
+
+ķ `nba_engine_ui.py`: The interactive terminal interface.
+
+- `nba_analytics.py`: The logic core, mathematical models, and API scrapers.
+- `nba_stats_cache.json`: Local storage for 10-game rolling averages (created automatically).
+- `bet_tracker_YYYY-MM-DD.csv`: Automated logging of every pick and edge calculation.
 
 ---
 
-## 🚀 Quick Start: Environment Setup
+## 🛠️ VS Code Installation & Setup (macOS)
 
-Follow these steps to get the engine running on your local machine using **Python 3.14.2**.
+### **Step 1: Open Your Project**
 
-### 1. Clone & Navigate
+1. Launch **Visual Studio Code**.
+2. Go to `File > Open Folder...` and select the folder containing your `.py` files.
+
+### **Step 2: Set Up a Virtual Environment (Recommended)**
+
+This keeps your project libraries isolated and prevents "Module Not Found" errors.
+
+1. Open the integrated terminal in VS Code (`Terminal > New Terminal`).
+2. Type the following commands:
 
 ```bash
-git clone https://github.com/your-username/nba_prediction_engine.git
-cd nba_prediction_engine
+python3 -m venv .venv
+source .venv/bin/activate
 
 ```
 
-### 2. Create the Virtual Environment
+3. You should now see `(.venv)` at the start of your terminal prompt.
 
-To keep this project isolated from your NFL engine:
+### **Step 3: Install Dependencies**
 
-```bash
-python3 -m venv nba_predict
-
-```
-
-### 3. Activate the Environment
-
-* **macOS/Linux:**
-```bash
-source nba_predict/bin/activate
-
-```
-
-
-* **Windows:**
-```bash
-nba_predict\Scripts\activate
-
-```
-
-
-
-### 4. Install Dependencies
+Run this command in your VS Code terminal to install dependencies:
 
 ```bash
 pip install -r requirements.txt
 
 ```
 
----
+### **Step 4: Select the Python Interpreter**
 
-## 🧠 Core Methodology
+1. Press `Cmd + Shift + P` and type **"Python: Select Interpreter"**.
+2. Choose the one that starts with `./.venv/bin/python`. This ensures VS Code uses the libraries you just installed.
 
-The engine calculates a "Fair Line" by analyzing two primary data layers:
+### **Step 5: Run the Engine**
 
-### The Four-Factor Model
-
-We weigh the four most critical components of basketball success:
-
-1. **Effective Field Goal % (eFG%)** - Shooting efficiency.
-2. **Turnover % (TOV%)** - Ball security.
-3. **Offensive Rebound % (ORB%)** - Second-chance points.
-4. **Free Throw Rate (FT Rate)** - Ability to draw fouls.
-
-### The Fatigue Adjuster (Rest Advantage)
-
-In the NBA, schedule-driven fatigue is a quantifiable edge. The engine applies the following penalties to a team’s Offensive Rating:
-
-* **Back-to-Back (B2B):**  points.
-* **3rd Game in 4 Nights:**  points.
-* **Travel Penalty:** Applied based on flight mileage between cities.
-
----
-
-## 🛠️ Usage
-
-To run the interactive selection interface:
+1. Open `nba_engine_ui.py` in the editor.
+2. Click the **"Play"** button in the top-right corner, or type this in the terminal:
 
 ```bash
 python nba_engine_ui.py
 
 ```
 
-1. **Select Game:** Choose a Game ID from the daily slate (e.g., `G7`).
-2. **Input Market Spread:** Enter the current spread from your sportsbook.
-3. **Analyze:** The engine will output the **Model Line** vs. **Market Line** and identify any betting edges.
+---
+
+## 🏁 Pro Troubleshooting
+
+- **Slow Data:** The first run creates the cache. Subsequent runs will be nearly instant.
+- **Connection Error:** If the NBA blocks your Wi-Fi, toggle your iPhone's **Airplane Mode** for 5 seconds to reset your hotspot's IP address.
+- **Missing Data:** If the CSV isn't updating, ensure you have "Write" permissions for the folder you opened in VS Code.
+
+[How to Set Up Python Development in VS Code on Mac](https://www.youtube.com/watch?v=4CJHjqZfH7A)
+This video provides a clear walkthrough for setting up a virtual environment and running Python scripts on macOS, which is essential for getting your NBA engine running smoothly.
 
 ---
 
-## 📁 Project Structure
+## 🧠 The "Nitty-Gritty": How the Engine is Modeled
 
-* `nba_engine_ui.py`: The interactive command-line interface.
-* `nba_analytics.py`: Core logic for Four-Factor and Fatigue calculations.
-* `requirements.txt`: List of required Python packages (`nba_api`, `pandas`, `scikit-learn`).
+The model operates on the principle that NBA games are won by possession efficiency. It translates advanced ratings into a point spread using the following multi-layer logic:
 
+### 1. The Core Efficiency Formula
+
+We calculate the expected point differential per 100 possessions by cross-referencing offensive and defensive ratings over a **rolling 10-game window**:
+
+$$Raw\ Diff = (OffRtg_{home} - DefRtg_{away}) - (OffRtg_{away} - DefRtg_{home})$$
+
+This value is then normalized to the projected pace of the game:
+
+$$Points_{spread} = Raw\ Diff \times \left( \frac{Pace_{avg}}{100} \right)$$
+
+### 2. Situational Adjustments (The "Edge")
+
+To move beyond a 50% accuracy rate, the engine applies three situational layers:
+
+- **Fatigue Adjuster (B2B):** Detects if a team played the previous night. A **-2.5 point penalty** is applied to tired teams to account for drops in rebounding and defensive intensity.
+- **Dynamic Home Court (HCA):** Instead of a flat +3.0, the engine calculates a team-specific HCA based on their season-long Home vs. Road Net Rating.
+- **Star Tax (Injury Impact):** Scrapes live injury reports. If a star is out, the engine looks up their individual `On-Off Plus/Minus` and subtracts that value from the team's total power rating.
+
+### 3. The Sanity Check (Volatility Filter)
+
+If the **Calculated Edge** (Difference between Engine Line and Market Line) exceeds **11.0 points**, the engine flags the game as high-volatility. This usually indicates a market-moving event (like a trade or late scratch) that the math has detected but requires human verification.
+
+---
+
+### 📉 Mathematical Modeling Section
+
+The engine uses a series of possession-based linear equations to derive the fair value of a matchup.
+
+#### 1. Efficiency Differential ()
+
+We first calculate the net efficiency margin by comparing how each team's offense performs against the opponent's defense:
+
+$$Raw\ Diff = (OffRtg_{home} - DefRtg_{away}) - (OffRtg_{away} - DefRtg_{home})$$
+
+#### 2. Pace Normalization
+
+Since is calculated per 100 possessions, we must scale it to the game's projected (the total number of possessions for both teams):
+
+$$Points_{spread} = Raw\ Diff \times \left( \frac{Pace_{avg}}{100} \right)$$
+
+#### 3. Situational Final Line ()
+
+The final projected spread incorporates the Dynamic Home Court Advantage (), the Fatigue Adjustment (), and the Star Tax ():
+
+$$Fair\ Line = Points_{spread} + HCA + \sum Rest + \sum Injury$$
+
+---
+
+## 🛠️ Extreme Edge
+
+Those "Extreme Edge" alerts are exactly what you want to see—it means the engine is doing its job by flagging games where the math significantly diverges from the Vegas line.
+
+For the **February 8, 2026** slate you just ran, your engine is reacting to a massive amount of "noise" in the injury reports. Here is the breakdown of why those specific games triggered alerts:
+
+### 🔍 Breakdown of the "Extreme" Edges
+
+| Game              | Edge          | Why the Alert Triggered                                                                                                                                                                                                                                                             |
+| ----------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **G1: NYK @ BOS** | **12.59 pts** | **The Tatum Factor:** Jayson Tatum is officially **OUT** (Achilles). Your engine's "Star Tax" likely hammered the Celtics' rating, while the market is still giving them a -3.5 favorite status based on their depth.                                                               |
+| **G3: IND @ TOR** | **16.24 pts** | **The Zubac/Haliburton Void:** This is a "chaos" game. The Pacers are missing Tyrese Haliburton and Ivica Zubac, while Toronto has several "Questionables." The 16-point gap suggests the market thinks Toronto is healthy, while your engine sees two depleted rosters.            |
+| **G4: LAC @ MIN** | **10.6 pts**  | **Clippers Trade/Injury Flux:** The Clippers are listed with several "Out" players (Garland, Mathurin, Jackson) due to pending trades and injuries. Your engine likes the Clippers +9.5 because it sees Minnesota's Poeltl being out as a bigger net-negative than the market does. |
+
+---
+
+### 🛠️ How to Handle these Alerts
+
+When you see an edge over 10 points, **don't just bet the "Recommended Side" immediately.** Use the "Human in the Loop" method:
+
+1. **Check the "Questionables":** For G1, the Knicks have **Karl-Anthony Towns, Josh Hart, and OG Anunoby** all listed as Questionable. If all three play, your "Recommended Side" (Knicks) is a lock. If all three sit, that 12.59-point edge might actually vanish or flip.
+2. **Verify the Scraper:** Since the scraper pulls from CBS, sometimes it misses a "Game Time Decision" (GTD) that was just announced on Twitter/X.
+3. **The "Trap Line" Rule:** If your engine says the Knicks should be favored by 9, but Vegas has them as +3.5, ask yourself: _"What does Vegas know that my 10-game rolling average doesn't?"_ (Usually, it's a specific player matchup or a "revenge game" narrative).
+
+---

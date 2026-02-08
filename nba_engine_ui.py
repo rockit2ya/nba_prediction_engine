@@ -1,93 +1,111 @@
-import pandas as pd
+import os
+import time
 from datetime import datetime
-from nba_api.stats.endpoints import scoreboardv2
+from nba_api.live.nba.endpoints import scoreboard
 from nba_api.stats.static import teams
-from nba_analytics import predict_nba_spread
+from nba_analytics import predict_nba_spread, log_bet, get_cache_time, calculate_pace_and_ratings
 
-def get_team_mapping():
-    """Creates a lookup dictionary for ID -> Full Name."""
-    nba_teams = teams.get_teams()
-    return {team['id']: team['full_name'] for team in nba_teams}
-
-def display_dynamic_schedule():
-    """Pulls today's NBA games and displays them with pretty formatting."""
-    print("\n" + "="*75)
-    print(f"--- 🏀 NBA DYNAMIC SCOREBOARD | {datetime.today().strftime('%B %d, %Y')} ---")
-    print("="*75)
-    
-    # Initialize lookup and fetch scoreboard
-    team_lookup = get_team_mapping()
-    board = scoreboardv2.ScoreboardV2()
-    games_df = board.get_data_frames()[0]
-    
-    if games_df.empty:
-        print("📭 No games scheduled for today.")
-        return {}
-
-    dynamic_schedule = {}
-    
-    # Header for the table
-    print(f"{'ID':<5} {'AWAY TEAM':<25} {'HOME TEAM':<25} {'TIME (EST)':<15}")
-    print("-" * 75)
-
-    for i, row in games_df.iterrows():
-        gid = f"G{i+1}"
-        # Map IDs to Full Names
-        away_name = team_lookup.get(row['VISITOR_TEAM_ID'], "Unknown Team")
-        home_name = team_lookup.get(row['HOME_TEAM_ID'], "Unknown Team")
-        time = row['GAME_STATUS_TEXT'].strip()
-        
-        # Store for the selection loop
-        dynamic_schedule[gid] = (away_name, home_name, time)
-        
-        # Pretty print the row
-        print(f"{gid:<5} {away_name:<25} {home_name:<25} {time:<15}")
-        
-    return dynamic_schedule
+def calculate_kelly(market, fair_line):
+    """Conservative Quarter-Kelly Criterion bankroll management."""
+    b, edge = 0.91, abs(fair_line - market)
+    prob = min(0.70, max(0.48, 0.524 + (edge * 0.015)))
+    kelly_f = ((b * prob) - (1 - prob)) / b
+    return round(max(0, kelly_f * 0.25) * 100, 2)
 
 def run_ui():
-    schedule = display_dynamic_schedule()
-    if not schedule: return
+    today_display = datetime.now().strftime("%B %d, %Y")
+    
+    # Pre-load analytics data/cache
+    print("\n[SYSTEM] Initializing Pro Analytics Engine...")
+    calculate_pace_and_ratings() 
 
     while True:
-        print("\n" + "—" * 50)
-        choice = input("Select a Game ID to analyze (or 'Q' to quit): ").upper()
+        data_age = get_cache_time()
+        print("\n" + "="*75)
+        print(f"--- 🏀 NBA PRO ENGINE (V3) | {today_display} ---")
+        print(f"--- DATA REFRESH STATUS: {data_age} ---")
+        print("="*75)
         
-        if choice == 'Q':
-            print("\nShutting down. Good luck with your bets, Johnny!")
+        schedule = {}
+        try:
+            sb = scoreboard.ScoreBoard()
+            games = sb.get_dict()['scoreboard']['games']
+            
+            for i, game in enumerate(games):
+                gid = f"G{i+1}"
+                away = game['awayTeam']['teamName']
+                home = game['homeTeam']['teamName']
+                status = game['gameStatusText']
+                schedule[gid] = (away, home)
+                print(f"{gid:<4} {away:<20} @ {home:<20} {status}")
+        except Exception:
+            print("❌ Scoreboard Error: Unable to reach NBA Stats Server.")
+            print("💡 TIP: Type 'C' to analyze a Custom Matchup manually.")
+
+        print("-" * 75)
+        print("COMMANDS: [G#] (Analyze) | [R] (Refresh Data) | [C] (Custom) | [Q] (Quit)")
+        choice = input("Enter Command: ").upper()
+
+        if choice == 'Q': 
+            print("Shutting down. Good luck tonight, Johnny!")
             break
             
-        if choice in schedule:
-            away_team, home_team, time = schedule[choice]
-            print(f"\n[ANALYZING] {away_team} at {home_team} ({time})")
+        elif choice == 'R':
+            print("\n🔄 Force-refreshing NBA Advanced Stats API...")
+            calculate_pace_and_ratings(force_refresh=True)
+            continue
+            
+        elif choice in schedule or choice == 'C':
+            if choice == 'C':
+                away = input("Enter Away Team Name: ")
+                home = input("Enter Home Team Name: ")
+            else:
+                away, home = schedule[choice]
+
+            print(f"\n[ANALYZING] {away} vs {home}...")
             
             try:
-                market_line = float(input(f"Enter Market Spread for {home_team} (e.g. -3.5): "))
+                line_in = input(f"Market Line for {home} (e.g., -5.5): ")
+                market = float(line_in)
                 
-                # Fetch prediction from analytics engine
-                model_line = predict_nba_spread(away_team, home_team)
-                edge = round(abs(model_line - market_line), 2)
+                # Pro Logic: Injury Star Tax + Fatigue + HCA
+                fair_line, q_players = predict_nba_spread(away, home)
+                edge = round(abs(fair_line - market), 2)
+                kelly = calculate_kelly(market, fair_line)
+                
+                # Confidence Grade Logic
+                conf = "HIGH"
+                if len(q_players) >= 2: conf = "LOW (High Injury Volatility)"
+                elif len(q_players) == 1: conf = "MEDIUM"
 
-                print("\n" + "•" * 45)
-                print(f"ENGINE FAIR LINE:   {model_line}")
-                print(f"MARKET LINE:        {market_line}")
-                print(f"CALCULATED EDGE:    {edge} points")
-                print("•" * 45)
+                print("\n" + "•"*45)
+                print(f"PRO ENGINE LINE: {fair_line}")
+                print(f"MARKET SPREAD:   {market}")
+                print(f"CALCULATED EDGE: {edge} pts")
+                print(f"KELLY SUGGESTION: Risk {kelly}% of Bankroll")
+                print(f"MODEL CONFIDENCE: {conf}")
+                print("•"*45)
 
-                if edge >= 2.5:
-                    side = home_team if model_line < market_line else away_team
-                    print(f"🔥 MASSIVE SIGNAL: Bet on {side}")
-                elif edge >= 1.0:
-                    print("🟢 MODERATE SIGNAL: Small value identified.")
-                else:
-                    print("⚪ NO SIGNAL: Market is currently efficient.")
-                    
-            except ValueError:
-                print("⚠️ Error: Please enter a numeric spread.")
+                if q_players:
+                    print(f"⚠️  GTD/QUESTIONABLE: {', '.join(q_players)}")
+                
+                recommendation = home if fair_line < market else away
+                if edge >= 2.5 and "HIGH" in conf:
+                    print(f"🔥 STRONG SIGNAL: Bet on {recommendation}")
+                elif edge > 11:
+                    print(f"🚨 EXTREME EDGE ALERT: Check for late-breaking scratches!")
+                
+                # Log to date-stamped CSV
+                log_bet(choice, away, home, fair_line, market, edge, recommendation, kelly)
+                
+                print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard in 5 seconds...")
+                time.sleep(5) # Automatic return delay
+                
             except Exception as e:
-                print(f"⚠️ Analytics Error: {e}")
+                print(f"❌ Error during analysis: {e}")
+                time.sleep(3)
         else:
-            print(f"⚠️ '{choice}' is not a valid Game ID.")
+            print("❌ Command not recognized.")
 
 if __name__ == "__main__":
     run_ui()
