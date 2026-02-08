@@ -1,35 +1,38 @@
 import pandas as pd
-from nba_api.stats.endpoints import leaguedashteamstats, leaguegamefinder
+from nba_api.stats.endpoints import leaguedashteamstats
+
+def standardize_team_name(name):
+    """
+    Normalizes team names to match the official NBA API's internal naming conventions.
+    """
+    mapping = {
+        "Los Angeles Clippers": "LA Clippers",
+        "Philadelphia 76ers": "Philadelphia 76ers", # Ensuring it's not "Seventy Sixers"
+        "Portland Trail Blazers": "Portland Trail Blazers" # Ensuring the space is correct
+    }
+    return mapping.get(name, name)
 
 def get_team_four_factors(season='2025-26', last_n_games=10):
-    """
-    Fetches Four Factor metrics for all teams. 
-    Uses a rolling window (default 10 games) to capture 'Momentum'.
-    """
     try:
-        # Fetching 'Four Factors' measure type from NBA API
         stats = leaguedashteamstats.LeagueDashTeamStats(
             season=season,
             last_n_games=last_n_games,
             measure_type_detailed_defense='Four Factors'
         ).get_data_frames()[0]
         
-        # Select key columns: eFG, TOV%, OREB%, FT Rate
-        # These are usually returned as decimals (e.g., 0.542)
+        if stats.empty:
+            return pd.DataFrame()
+
         columns = [
             'TEAM_ID', 'TEAM_NAME', 'EFG_PCT', 'TM_TOV_PCT', 
             'OREB_PCT', 'FTA_RATE', 'OPP_EFG_PCT', 
             'OPP_TM_TOV_PCT', 'OPP_OREB_PCT', 'OPP_FTA_RATE'
         ]
         return stats[columns]
-    except Exception as e:
-        print(f"Error fetching Four Factors: {e}")
+    except Exception:
         return pd.DataFrame()
 
 def calculate_pace_and_ratings(season='2025-26', last_n_games=10):
-    """
-    Fetches Advanced metrics to get Pace and Offensive/Defensive Ratings.
-    """
     try:
         adv_stats = leaguedashteamstats.LeagueDashTeamStats(
             season=season,
@@ -37,47 +40,39 @@ def calculate_pace_and_ratings(season='2025-26', last_n_games=10):
             measure_type_detailed_defense='Advanced'
         ).get_data_frames()[0]
         
+        if adv_stats.empty:
+            return pd.DataFrame()
+            
         return adv_stats[['TEAM_NAME', 'OFF_RATING', 'DEF_RATING', 'PACE']]
-    except Exception as e:
-        print(f"Error fetching Advanced Ratings: {e}")
+    except Exception:
         return pd.DataFrame()
 
-def get_rest_advantage(team_name):
-    """
-    Logic to check if a team is on a Back-to-Back (B2B).
-    Subtracts 2.5 points from efficiency if they played yesterday.
-    """
-    # In a full implementation, you'd check leaguegamefinder 
-    # for the team's most recent game date vs today.
-    # Placeholder for UI integration:
-    return -2.5 if "B2B" in team_name else 0.0
-
 def predict_nba_spread(away_team, home_team):
-    """
-    Combines Four Factors + Pace + Rest to create a 'Fair Line'.
-    """
+    # 📝 Standardize names immediately upon input
+    away_team = standardize_team_name(away_team)
+    home_team = standardize_team_name(home_team)
+    
     ratings = calculate_pace_and_ratings()
     
     if ratings.empty:
-        return 0.0
+        raise Exception("NBA API returned an empty dataset. Try again in 60s.")
 
-    # Get team ratings
-    home_data = ratings[ratings['TEAM_NAME'] == home_team].iloc[0]
-    away_data = ratings[ratings['TEAM_NAME'] == away_team].iloc[0]
+    # Search using standardized names
+    home_rows = ratings[ratings['TEAM_NAME'] == home_team]
+    away_rows = ratings[ratings['TEAM_NAME'] == away_team]
 
-    # Calculate Raw Differential (Pts per 100 possessions)
-    # Plus standard Home Court Advantage (+3.0)
+    if home_rows.empty or away_rows.empty:
+        missing = home_team if home_rows.empty else away_team
+        raise Exception(f"Stat lookup failed for {missing}. (Standardized: {missing})")
+
+    home_data = home_rows.iloc[0]
+    away_data = away_rows.iloc[0]
+
+    # Analytics Math
     raw_diff = (home_data['OFF_RATING'] - away_data['DEF_RATING']) - \
                (away_data['OFF_RATING'] - home_data['DEF_RATING'])
     
-    # Pace Adjustment: Normalize to the average of both teams' pace
     avg_pace = (home_data['PACE'] + away_data['PACE']) / 2
-    projected_spread = (raw_diff * (avg_pace / 100)) + 3.0
+    projected_spread = (raw_diff * (avg_pace / 100)) + 3.0 # Home Court Advantage
     
     return round(projected_spread, 2)
-
-if __name__ == "__main__":
-    # Test Run
-    print("Testing NBA Analytics Engine...")
-    test_spread = predict_nba_spread("Golden State Warriors", "Phoenix Suns")
-    print(f"Projected Fair Line (Home Team): {test_spread}")
