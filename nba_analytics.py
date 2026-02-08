@@ -3,13 +3,34 @@ from nba_api.stats.endpoints import leaguedashteamstats
 
 def standardize_team_name(name):
     """
-    Normalizes team names to match the official NBA API's internal naming conventions.
+    Normalizes team names and abbreviations to match official NBA API strings.
     """
+    # Dictionary mapping common shorthand/aliases to official API names
     mapping = {
+        # The "Big Three" Crashing Risks
         "Los Angeles Clippers": "LA Clippers",
-        "Philadelphia 76ers": "Philadelphia 76ers", # Ensuring it's not "Seventy Sixers"
-        "Portland Trail Blazers": "Portland Trail Blazers" # Ensuring the space is correct
+        "LA Clippers": "LA Clippers",
+        "Philadelphia 76ers": "Philadelphia 76ers",
+        "Philly 76ers": "Philadelphia 76ers",
+        "Portland Trail Blazers": "Portland Trail Blazers",
+        "Portland Trailblazers": "Portland Trail Blazers",
+        
+        # City Abbreviations & Shorthand
+        "GSW": "Golden State Warriors",
+        "GS Warriors": "Golden State Warriors",
+        "LAL": "Los Angeles Lakers",
+        "NYK": "New York Knicks",
+        "OKC": "Oklahoma City Thunder",
+        "SAS": "San Antonio Spurs",
+        "NOP": "New Orleans Pelicans",
+        "Pels": "New Orleans Pelicans",
+        "Cavs": "Cleveland Cavaliers",
+        "Mavs": "Dallas Mavericks",
+        "Wolves": "Minnesota Timberwolves",
+        "T-Wolves": "Minnesota Timberwolves"
     }
+    
+    # Check if the name exists in our map; if not, return the original name
     return mapping.get(name, name)
 
 def get_team_four_factors(season='2025-26', last_n_games=10):
