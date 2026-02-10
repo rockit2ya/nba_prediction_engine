@@ -42,7 +42,7 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 
 ---
 
-## 🚦 Recommended User Workflow (2026)
+## 🚦 Recommended User Workflow
 
 Follow these steps to get the most out of the NBA Prediction Engine:
 
