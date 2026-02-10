@@ -69,8 +69,9 @@ def run_ui():
                     line_in = input(f"Market Line for {home} (e.g., -5.5): ")
                     market = float(line_in)
 
-                    # Pro Logic: Injury Star Tax + Fatigue + HCA
-                    fair_line, q_players = predict_nba_spread(away, home)
+
+                    # Pro Logic: Injury Star Tax + Fatigue + HCA + late-breaking flag
+                    fair_line, q_players, news, flag = predict_nba_spread(away, home)
                     edge = round(abs(fair_line - market), 2)
                     kelly = calculate_kelly(market, fair_line)
 
@@ -89,9 +90,11 @@ def run_ui():
 
                     if q_players:
                         print(f"⚠️  GTD/QUESTIONABLE: {', '.join(q_players)}")
+                    if flag:
+                        print(f"🚨 ALERT: Late-breaking lineup/injury news detected! Double-check before betting.")
 
                     recommendation = home if fair_line < market else away
-                    if edge >= 2.5 and "HIGH" in conf:
+                    if edge >= 5 and "HIGH" in conf:
                         print(f"🔥 STRONG SIGNAL: Bet on {recommendation}")
                     elif edge > 11:
                         print(f"🚨 EXTREME EDGE ALERT: Check for late-breaking scratches!")

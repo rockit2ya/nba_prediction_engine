@@ -24,12 +24,14 @@ run_fetcher() {
 run_fetcher nba_data_fetcher_advanced.py
 
 # If nba_stats_cache.json does not exist or is empty, try playwright fetcher
-if [ ! -s nba_stats_cache.json ]; then
-  echo "[WARN] nba_stats_cache.json missing or empty after advanced fetcher. Trying Playwright fetcher..." | tee -a "$LOG"
-  run_fetcher nba_data_fetcher_playwright.py
-fi
 
 # Final check
+if [ ! -s nba_stats_cache.json ]; then
+  echo "[FATAL] nba_stats_cache.json still missing or empty. Data fetch failed." | tee -a "$LOG"
+  exit 2
+else
+  echo "[COMPLETE] Data fetch successful. nba_stats_cache.json is ready." | tee -a "$LOG"
+fi
 if [ ! -s nba_stats_cache.json ]; then
   echo "[FATAL] nba_stats_cache.json still missing or empty. Data fetch failed." | tee -a "$LOG"
   exit 2

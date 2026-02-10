@@ -9,6 +9,9 @@ from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from nba_api.stats.endpoints import leaguedashteamstats, teamgamelog, teamplayeronoffsummary
 from nba_api.stats.static import teams, players
+# Additional imports for real-time news and fuzzy matching
+import difflib
+import feedparser
 
 # --- BROWSER SETTINGS & SESSION ---
 # Persistent session keeps the connection open for massive speed gains
@@ -131,24 +134,56 @@ def calculate_pace_and_ratings(season='2025-26', last_n_games=10, force_refresh=
     return pd.DataFrame(baseline_list)
 
 def get_live_injuries():
-    """Scrapes CBS Sports for real-time injury statuses."""
+    """Scrapes ESPN for real-time injury statuses (updated for 2026 HTML)."""
+    url = "https://www.espn.com/nba/injuries"
     try:
-        url = "https://www.cbssports.com/nba/injuries/"
-        res = session.get(url, timeout=8)
-        soup = BeautifulSoup(res.content, 'html.parser')
-        injury_map = {}
-        teams_html = soup.find_all('div', class_='TeamLogoNameLockup-name')
-        tables = soup.find_all('table', class_='TableBase-table')
-        for team, table in zip(teams_html, tables):
-            t_name = team.text.strip()
-            statuses = [{'name': r.find_all('td')[0].text.strip(), 
-                         'status': r.find_all('td')[4].text.strip().lower()} 
-                        for r in table.find_all('tr')[1:]]
-            injury_map[t_name] = statuses
-        return injury_map
+        res = session.get(url, timeout=10)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        teams = {}
+        # ESPN: Each team section is a logo img, team name (h2), then a table of injuries
+        for h2 in soup.find_all('h2'):
+            team_name = h2.text.strip()
+            table = h2.find_next('table')
+            if not table:
+                continue
+            players = []
+            for row in table.find_all('tr')[1:]:
+                cols = row.find_all('td')
+                if len(cols) >= 5:
+                    player = cols[0].text.strip()
+                    pos = cols[1].text.strip()
+                    date = cols[2].text.strip()
+                    status = cols[3].text.strip().lower()
+                    note = cols[4].text.strip()
+                    players.append({'name': player, 'position': pos, 'date': date, 'status': status, 'note': note})
+            teams[team_name] = players
+        return teams
     except Exception as e:
-        print(f"[!] Injury scrape failed ({type(e).__name__}), using empty injury map")
+        print(f"[!] ESPN injury scrape failed ({type(e).__name__}): {e}")
         return {}
+
+# Placeholder for real-time news integration
+def get_real_time_news():
+    def check_news_completeness(news_items):
+        # Check for late-breaking news or missing updates
+        late_news = [item for item in news_items if 'late scratch' in item['title'].lower() or 'late scratch' in item['summary'].lower()]
+        if late_news:
+            print("[!] Late-breaking news detected:")
+            for item in late_news:
+                print(f"  {item['title']} | {item['published']}")
+        else:
+            print("[✓] No late-breaking news found.")
+    # Example: Use RSS feeds from ESPN, NBA, or Twitter API
+    feeds = [
+        'https://www.espn.com/espn/rss/nba/news',
+        'https://www.nba.com/rss/nba_news.xml'
+    ]
+    news_items = []
+    for feed_url in feeds:
+        d = feedparser.parse(feed_url)
+        for entry in d.entries:
+            news_items.append({'title': entry.title, 'summary': entry.summary, 'published': entry.published})
+    return news_items
 
 def get_star_tax_weighted(team_id, out_players):
     """Calculates player impact using On-Off splits."""
@@ -183,19 +218,24 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     Uses Multi-threading to fetch situational data in parallel.
     """
     ratings = calculate_pace_and_ratings(force_refresh=force_refresh)
-    
-    # Fuzzy Matching
+    # Improved fuzzy matching for team names
+    def fuzzy_team_match(name, team_list):
+        matches = difflib.get_close_matches(name, team_list, n=1, cutoff=0.7)
+        return matches[0] if matches else name
+    team_names = ratings['TEAM_NAME'].tolist()
+    h_team = fuzzy_team_match(home_team, team_names)
+    a_team = fuzzy_team_match(away_team, team_names)
     try:
-        h_row = ratings[ratings['TEAM_NAME'].str.contains(home_team, case=False)].iloc[0]
-        a_row = ratings[ratings['TEAM_NAME'].str.contains(away_team, case=False)].iloc[0]
+        h_row = ratings[ratings['TEAM_NAME'] == h_team].iloc[0]
+        a_row = ratings[ratings['TEAM_NAME'] == a_team].iloc[0]
     except: raise Exception(f"Fuzzy match failed for {away_team} or {home_team}")
 
     # SPEED UP: Parallel Execution for Situational Checks (with timeouts)
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         future_injuries = executor.submit(get_live_injuries)
         future_h_rest = executor.submit(get_rest_penalty, h_row['TEAM_ID'])
         future_a_rest = executor.submit(get_rest_penalty, a_row['TEAM_ID'])
-        
+        future_news = executor.submit(get_real_time_news)
         try:
             injuries = future_injuries.result(timeout=10)
         except:
@@ -208,24 +248,47 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
             a_rest = future_a_rest.result(timeout=10)
         except:
             a_rest = 0
+        try:
+            news = future_news.result(timeout=10)
+        except:
+            news = []
+        # Flag if any player status is 'out', 'late scratch', or 'day-to-day' for today
+        flag = False
+        today = datetime.now().strftime('%b %d')
+        for team, plist in injuries.items():
+            for p in plist:
+                if (p['status'] in ['out', 'late scratch', 'day-to-day'] and today in p['date']):
+                    flag = True
+        # Also flag if news contains late scratch
+        for item in news:
+            if 'late scratch' in item['title'].lower() or 'late scratch' in item['summary'].lower():
+                flag = True
 
     # Calculate Bayesian Star Tax
     h_tax = get_star_tax_weighted(h_row['TEAM_ID'], injuries.get(h_row['TEAM_NAME'], []))
     a_tax = get_star_tax_weighted(a_row['TEAM_ID'], injuries.get(a_row['TEAM_NAME'], []))
-    
+    # Placeholder: Factor in real-time news (e.g., late scratches, coaching changes)
+    # Example: If news contains 'late scratch' or 'coach fired', adjust fair_line
+    news_factor = 0
+    for item in news:
+        if 'late scratch' in item['title'].lower() or 'late scratch' in item['summary'].lower():
+            news_factor -= 2
+        if 'coach fired' in item['title'].lower() or 'coach fired' in item['summary'].lower():
+            news_factor -= 1
     # Core Math
     rest_adj = h_rest - a_rest
     hca = 3.0 + ((h_row['NET_RATING'] - a_row['NET_RATING']) / 20)
     raw_diff = (h_row['OFF_RATING'] - a_row['DEF_RATING']) - (a_row['OFF_RATING'] - h_row['DEF_RATING'])
-    fair_line = (raw_diff * (h_row['PACE'] / 100)) + hca + rest_adj - h_tax + a_tax
-    
+    fair_line = (raw_diff * (h_row['PACE'] / 100)) + hca + rest_adj - h_tax + a_tax + news_factor
     q_players = [p['name'] for p in (injuries.get(h_row['TEAM_NAME'], []) + injuries.get(a_row['TEAM_NAME'], [])) if 'questionable' in p['status']]
-    return round(fair_line, 2), q_players
+    return round(fair_line, 2), q_players, news, flag
 
 def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly):
     filename = f"bet_tracker_{datetime.now().strftime('%Y-%m-%d')}.csv"
     exists = os.path.isfile(filename)
+    # Add manual notes column for context
+    notes = input("Enter any manual notes/context for this bet (press Enter to skip): ")
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
-        if not exists: writer.writerow(['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result'])
-        writer.writerow([gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, 'PENDING'])
+        if not exists: writer.writerow(['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes'])
+        writer.writerow([gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, 'PENDING', notes])
