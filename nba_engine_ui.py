@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 from datetime import datetime
 from nba_api.live.nba.endpoints import scoreboard
@@ -58,8 +59,20 @@ def run_ui():
                 break
 
             elif choice == 'R':
-                print("\n🔄 Force-refreshing NBA Advanced Stats API...")
-                calculate_pace_and_ratings(force_refresh=True)
+                print("\n🔄 Refreshing all NBA data (stats, injuries, news, rest)...")
+                script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fetch_all_nba_data.sh')
+                result = subprocess.run(['bash', script_path], capture_output=True, text=True)
+                # Show summary lines to the user
+                output = result.stdout + result.stderr
+                for line in output.splitlines():
+                    if any(tag in line for tag in ['[SUCCESS]', '[ERROR]', '[SUMMARY]', '[COMPLETE]', '[FATAL]', '  -']):
+                        print(line)
+                if result.returncode != 0:
+                    print("[ERROR] Data refresh failed. Check fetch_all_nba_data.log for details.")
+                else:
+                    # Reload caches in-memory
+                    calculate_pace_and_ratings(force_refresh=True)
+                    print("[✓] All caches reloaded.")
                 continue
 
             elif choice in schedule or choice == 'C':
