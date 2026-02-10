@@ -1,0 +1,728 @@
+[2026-02-09 19:30:56.624208] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 19:31:06.940537] NBA.com Advanced scrape failed: Message: no such element: Unable to locate element: {"method":"css selector","selector":".Crom_table"}
+  (Session info: chrome=144.0.7559.133); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+Stacktrace:
+0   chromedriver                        0x0000000100f23928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000100f1bc04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x00000001009fe83c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x0000000100a47d7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x0000000100a86fe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x0000000100a3c07c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x0000000100ee2884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000100ee5fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x0000000100ec7578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000100ee6850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x0000000100eb7640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000100f0a194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000100f0a310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x0000000100f1b85c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 19:31:06.940782] All automated fetches failed. Please update manually.
+[2026-02-09 19:43:51.489470] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 19:44:30.675297] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000105217928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x000000010520fc04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x0000000104cf283c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x0000000104d3bd7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x0000000104d7afe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x0000000104d3007c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x00000001051d6884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x00000001051d9fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x00000001051bb578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x00000001051da850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x00000001051ab640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x00000001051fe194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x00000001051fe310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x000000010520f85c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 19:44:30.675852] All automated fetches failed. Please update manually.
+[2026-02-09 19:54:38.652801] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 19:55:17.777239] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000104857928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x000000010484fc04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x000000010433283c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x000000010437bd7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x00000001043bafe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x000000010437007c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x0000000104816884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000104819fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x00000001047fb578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x000000010481a850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x00000001047eb640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x000000010483e194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x000000010483e310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x000000010484f85c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 19:55:17.778035] All automated fetches failed. Please update manually.
+[2026-02-09 19:57:44.564538] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 19:58:23.669718] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000102f8b928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000102f83c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x0000000102a6683c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x0000000102aafd7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x0000000102aeefe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x0000000102aa407c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x0000000102f4a884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000102f4dfcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x0000000102f2f578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000102f4e850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x0000000102f1f640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000102f72194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000102f72310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x0000000102f8385c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 19:58:23.670032] All automated fetches failed. Please update manually.
+[2026-02-09 20:01:29.925871] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:01:46.060475] Data validation failed. Some values missing or zero.
+[2026-02-09 20:01:46.060601] All automated fetches failed. Please update manually.
+[2026-02-09 20:02:17.899641] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:02:31.642055] Data validation failed. Some values missing or zero.
+[2026-02-09 20:02:31.642192] All automated fetches failed. Please update manually.
+[2026-02-09 20:04:09.253437] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:04:22.514074] Found 31 rows in the table.
+[2026-02-09 20:04:22.517467] Row 0 has 0 columns: []
+[2026-02-09 20:04:22.577591] Row 1 has 21 columns: ['1', 'Oklahoma City Thunder', '53', '40', '13', '2569.0', '117.7', '105.9', '11.8', '59.0', '2.06', '18.3', '25.4', '69.4', '48.6', '12.2', '56.3', '60.2', '100.94', '56.7', '5,401']
+[2026-02-09 20:04:22.623453] Row 2 has 21 columns: ['2', 'Detroit Pistons', '51', '38', '13', '2458.0', '116.4', '108.4', '8.1', '62.4', '1.75', '18.5', '34.9', '69.3', '52.2', '15.2', '54.3', '57.9', '100.64', '54.8', '5,146']
+[2026-02-09 20:04:23.096788] Data validation failed. Some values missing or zero.
+[2026-02-09 20:04:23.097104] All automated fetches failed. Please update manually.
+[2026-02-09 20:04:59.429985] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:05:12.600616] Found 31 rows in the table.
+[2026-02-09 20:05:12.685390] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:05:12.685610] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:05:13.140368] Data validation failed. Some values missing or zero.
+[2026-02-09 20:05:13.140496] All automated fetches failed. Please update manually.
+[2026-02-09 20:06:03.518212] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:06:16.818813] Found 31 rows in the table.
+[2026-02-09 20:06:16.912336] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:06:16.912486] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:06:16.926586] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:06:16.938718] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:06:16.951293] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:06:16.964377] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:06:16.978151] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:06:16.992003] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:06:17.004974] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:06:17.017944] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:06:17.030436] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:06:17.045264] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:06:17.057988] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:06:17.070251] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:06:17.082563] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:06:17.094607] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:06:17.107590] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:06:17.120445] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:06:17.137817] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:06:17.154464] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:06:17.166247] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:06:17.178472] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:06:17.190734] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:06:17.203030] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:06:17.214689] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:06:17.226960] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:06:17.239359] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:06:17.251773] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:06:17.263538] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:06:17.275821] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:06:17.288141] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:06:17.299898] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:06:17.391425] Data validation failed. Some values missing or zero.
+[2026-02-09 20:06:17.391506] All automated fetches failed. Please update manually.
+[2026-02-09 20:06:55.456505] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:07:08.427113] Found 31 rows in the table.
+[2026-02-09 20:07:08.523158] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:07:08.523459] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:07:08.536472] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:07:08.549500] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:07:08.571919] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:07:08.585778] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:07:08.600844] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:07:08.615123] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:07:08.633067] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:07:08.650591] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:07:08.663693] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:07:08.676516] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:07:08.689913] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:07:08.705523] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:07:08.718813] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:07:08.732063] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:07:08.770807] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:07:08.788812] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:07:08.801713] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:07:08.814382] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:07:08.826958] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:07:08.840644] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:07:08.853565] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:07:08.866093] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:07:08.878049] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:07:08.890487] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:07:08.903425] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:07:08.916468] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:07:08.929139] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:07:08.941834] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:07:08.954808] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:07:08.967456] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:07:09.055648] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:07:09.057686] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:07:09.057668
+[2026-02-09 20:07:09.057719] NBA.com Advanced data fetch complete.
+[2026-02-09 20:08:24.600686] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:09:06.675462] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x000000010468f928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000104687c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x000000010416a83c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x00000001041b3d7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x00000001041f2fe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x00000001041a807c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x000000010464e884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000104651fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x0000000104633578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000104652850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x0000000104623640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000104676194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000104676310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x000000010468785c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:09:06.676132] All automated fetches failed. Please update manually.
+[2026-02-09 20:09:47.392672] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:10:29.393784] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x00000001014af928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x00000001014a7c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x0000000100f8a83c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x0000000100fd3d7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x0000000101012fe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x0000000100fc807c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x000000010146e884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000101471fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x0000000101453578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000101472850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x0000000101443640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000101496194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000101496310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x00000001014a785c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:10:29.394176] All automated fetches failed. Please update manually.
+[2026-02-09 20:10:59.252054] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:11:12.264139] Found 31 rows in the table.
+[2026-02-09 20:11:12.373469] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:11:12.373582] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:11:12.387402] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:11:12.409705] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:11:12.423082] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:11:12.435832] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:11:12.448740] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:11:12.461575] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:11:12.474168] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:11:12.486468] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:11:12.498652] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:11:12.510692] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:11:12.523341] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:11:12.536002] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:11:12.549734] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:11:12.562149] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:11:12.575007] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:11:12.587913] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:11:12.600418] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:11:12.613221] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:11:12.634336] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:11:12.647057] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:11:12.659551] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:11:12.672420] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:11:12.685057] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:11:12.697288] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:11:12.708981] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:11:12.721187] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:11:12.733026] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:11:12.745984] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:11:12.758263] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:11:12.771077] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:11:12.861613] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:11:12.863521] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:11:12.863497
+[2026-02-09 20:11:12.863562] NBA.com Advanced data fetch complete.
+[2026-02-09 20:11:59.323338] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:12:05.125353] NBA.com Advanced scrape failed: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   chromedriver                        0x0000000104b1b928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000104b13c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x00000001045f683c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x00000001045cf330 chromedriver + 160560
+4   chromedriver                        0x0000000104668c4c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 542992
+5   chromedriver                        0x000000010467eb30 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 632820
+6   chromedriver                        0x000000010463407c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+7   chromedriver                        0x0000000104ada884 cxxbridge1$str$ptr + 2831984
+8   chromedriver                        0x0000000104addfcc cxxbridge1$str$ptr + 2846136
+9   chromedriver                        0x0000000104abf578 cxxbridge1$str$ptr + 2720612
+10  chromedriver                        0x0000000104ade850 cxxbridge1$str$ptr + 2848316
+11  chromedriver                        0x0000000104aaf640 cxxbridge1$str$ptr + 2655276
+12  chromedriver                        0x0000000104b02194 cxxbridge1$str$ptr + 2994048
+13  chromedriver                        0x0000000104b02310 cxxbridge1$str$ptr + 2994428
+14  chromedriver                        0x0000000104b1385c cxxbridge1$str$ptr + 3065416
+15  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+16  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:12:05.125672] All automated fetches failed. Please update manually.
+[2026-02-09 20:12:40.132883] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:13:22.041202] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000102a57928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000102a4fc04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x000000010253283c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x000000010257bd7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x00000001025bafe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x000000010257007c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x0000000102a16884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000102a19fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x00000001029fb578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000102a1a850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x00000001029eb640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000102a3e194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000102a3e310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x0000000102a4f85c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:13:22.041607] All automated fetches failed. Please update manually.
+[2026-02-09 20:26:45.981209] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:27:27.871079] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000100ffb928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000100ff3c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x0000000100ad683c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x0000000100b1fd7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x0000000100b5efe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x0000000100b1407c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x0000000100fba884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000100fbdfcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x0000000100f9f578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000100fbe850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x0000000100f8f640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000100fe2194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000100fe2310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x0000000100ff385c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:27:27.871631] All automated fetches failed. Please update manually.
+[2026-02-09 20:30:38.790002] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:31:20.826974] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x000000010478b928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000104783c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x000000010426683c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x00000001042afd7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x00000001042eefe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x00000001042a407c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x000000010474a884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x000000010474dfcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x000000010472f578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x000000010474e850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x000000010471f640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000104772194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000104772310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x000000010478385c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:31:20.827362] All automated fetches failed. Please update manually.
+[2026-02-09 20:31:31.513499] Starting NBA.com Advanced tab Playwright headless scrape...
+[2026-02-09 20:32:56.832921] Starting NBA.com Advanced tab Playwright headless scrape...
+[2026-02-09 20:34:13.933269] Starting NBA.com Advanced tab Playwright headless scrape...
+[2026-02-09 20:34:25.490788] Found 31 rows in the table.
+[2026-02-09 20:34:25.537760] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', 'GP RANK', 'W RANK', 'L RANK', 'MIN RANK', 'OFFRTG RANK', 'DEFRTG RANK', 'NETRTG RANK', 'AST% RANK', 'AST/TO RANK', 'ASTRATIO RANK', 'OREB% RANK', 'DREB% RANK', 'REB% RANK', 'TORATIO RANK', 'EFG% RANK', 'TS% RANK', 'PACE RANK', 'PIE RANK']
+[2026-02-09 20:34:25.537902] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:34:25.546185] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:34:25.555850] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:34:25.566727] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:34:25.575833] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:34:25.616737] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:34:25.630051] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:34:25.650608] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:34:25.659994] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:34:25.670019] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:34:25.682332] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:34:25.693445] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:34:25.706727] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:34:25.716956] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:34:25.725853] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:34:25.736049] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:34:25.745946] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:34:25.755060] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:34:25.765041] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:34:25.774120] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:34:25.785351] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:34:25.795544] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:34:25.805609] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:34:25.816189] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:34:25.825250] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:34:25.842804] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:34:25.852538] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:34:25.862999] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:34:25.875630] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:34:25.884810] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:34:25.893755] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:34:25.974420] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:34:25.993270] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:34:25.993170
+[2026-02-09 20:34:25.993415] NBA.com Advanced data fetch complete.
+[2026-02-09 20:34:56.065440] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:35:38.397075] NBA.com Advanced scrape failed: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000104d2f928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000104d27c04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x000000010480a83c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x0000000104853d7c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 375360
+4   chromedriver                        0x0000000104892fe8 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 634028
+5   chromedriver                        0x000000010484807c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+6   chromedriver                        0x0000000104cee884 cxxbridge1$str$ptr + 2831984
+7   chromedriver                        0x0000000104cf1fcc cxxbridge1$str$ptr + 2846136
+8   chromedriver                        0x0000000104cd3578 cxxbridge1$str$ptr + 2720612
+9   chromedriver                        0x0000000104cf2850 cxxbridge1$str$ptr + 2848316
+10  chromedriver                        0x0000000104cc3640 cxxbridge1$str$ptr + 2655276
+11  chromedriver                        0x0000000104d16194 cxxbridge1$str$ptr + 2994048
+12  chromedriver                        0x0000000104d16310 cxxbridge1$str$ptr + 2994428
+13  chromedriver                        0x0000000104d2785c cxxbridge1$str$ptr + 3065416
+14  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:35:38.397460] All automated fetches failed. Please update manually.
+[2026-02-09 20:36:47.620262] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:37:00.552936] Found 31 rows in the table.
+[2026-02-09 20:37:00.658667] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:37:00.658825] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:37:00.672610] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:37:00.686362] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:37:00.699676] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:37:00.713192] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:37:00.728942] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:37:00.742440] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:37:00.755726] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:37:00.768538] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:37:00.780891] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:37:00.793992] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:37:00.806931] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:37:00.819468] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:37:00.831725] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:37:00.844785] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:37:00.857576] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:37:00.870427] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:37:00.882466] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:37:00.894998] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:37:00.908115] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:37:00.930989] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:37:00.944263] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:37:00.957055] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:37:00.969737] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:37:00.982422] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:37:00.994829] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:37:01.007761] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:37:01.020244] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:37:01.032446] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:37:01.045034] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:37:01.057740] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:37:01.142770] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:37:01.143364] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:37:01.143344
+[2026-02-09 20:37:01.143408] NBA.com Advanced data fetch complete.
+[2026-02-09 20:37:27.310385] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:37:38.369378] NBA.com Advanced scrape failed: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=144.0.7559.133)
+Stacktrace:
+0   chromedriver                        0x0000000104cf3928 cxxbridge1$str$ptr + 3098388
+1   chromedriver                        0x0000000104cebc04 cxxbridge1$str$ptr + 3066352
+2   chromedriver                        0x00000001047ce83c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 75008
+3   chromedriver                        0x00000001047a7330 chromedriver + 160560
+4   chromedriver                        0x0000000104840c4c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 542992
+5   chromedriver                        0x0000000104856b30 _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 632820
+6   chromedriver                        0x000000010480c07c _RNvCs5DBLTqoOdVp_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 326976
+7   chromedriver                        0x0000000104cb2884 cxxbridge1$str$ptr + 2831984
+8   chromedriver                        0x0000000104cb5fcc cxxbridge1$str$ptr + 2846136
+9   chromedriver                        0x0000000104c97578 cxxbridge1$str$ptr + 2720612
+10  chromedriver                        0x0000000104cb6850 cxxbridge1$str$ptr + 2848316
+11  chromedriver                        0x0000000104c87640 cxxbridge1$str$ptr + 2655276
+12  chromedriver                        0x0000000104cda194 cxxbridge1$str$ptr + 2994048
+13  chromedriver                        0x0000000104cda310 cxxbridge1$str$ptr + 2994428
+14  chromedriver                        0x0000000104ceb85c cxxbridge1$str$ptr + 3065416
+15  libsystem_pthread.dylib             0x000000019bd2dc08 _pthread_start + 136
+16  libsystem_pthread.dylib             0x000000019bd28ba8 thread_start + 8
+
+[2026-02-09 20:37:38.369911] All automated fetches failed. Please update manually.
+[2026-02-09 20:41:02.355298] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:41:16.451026] No cookie/privacy popup found.
+[2026-02-09 20:41:16.467962] Found 31 rows in the table.
+[2026-02-09 20:41:16.569758] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:41:16.569967] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:41:16.584284] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:41:16.597126] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:41:16.610441] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:41:16.623733] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:41:16.636940] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:41:16.650492] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:41:16.664216] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:41:16.695100] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:41:16.721605] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:41:16.734197] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:41:16.747101] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:41:16.761670] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:41:16.775177] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:41:16.788149] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:41:16.801733] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:41:16.824842] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:41:16.838595] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:41:16.850719] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:41:16.863244] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:41:16.876211] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:41:16.888766] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:41:16.902572] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:41:16.916264] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:41:16.928194] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:41:16.940781] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:41:16.953465] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:41:16.966062] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:41:16.978239] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:41:16.991179] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:41:17.003498] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:41:17.088853] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:41:17.090534] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:41:17.090514
+[2026-02-09 20:41:17.090591] NBA.com Advanced data fetch complete.
+[2026-02-09 20:41:39.844841] Starting NBA.com Advanced tab Playwright headless scrape...
+[2026-02-09 20:41:50.122700] Found 31 rows in the table.
+[2026-02-09 20:41:50.197117] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', 'GP RANK', 'W RANK', 'L RANK', 'MIN RANK', 'OFFRTG RANK', 'DEFRTG RANK', 'NETRTG RANK', 'AST% RANK', 'AST/TO RANK', 'ASTRATIO RANK', 'OREB% RANK', 'DREB% RANK', 'REB% RANK', 'TORATIO RANK', 'EFG% RANK', 'TS% RANK', 'PACE RANK', 'PIE RANK']
+[2026-02-09 20:41:50.197236] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:41:50.213033] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:41:50.228271] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:41:50.238165] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:41:50.262255] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:41:50.303219] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:41:50.321604] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:41:50.337565] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:41:50.354165] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:41:50.369942] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:41:50.386775] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:41:50.402971] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:41:50.419754] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:41:50.436457] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:41:50.451957] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:41:50.467129] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:41:50.482756] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:41:50.497643] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:41:50.513361] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:41:50.530114] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:41:50.546837] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:41:50.563667] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:41:50.581145] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:41:50.598936] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:41:50.608404] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:41:50.619188] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:41:50.635419] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:41:50.652108] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:41:50.667534] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:41:50.682069] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:41:50.696890] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:41:51.273058] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:41:51.278318] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:41:51.278277
+[2026-02-09 20:41:51.278384] NBA.com Advanced data fetch complete.
+[2026-02-09 20:42:22.547039] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:42:37.572940] No cookie/privacy popup found.
+[2026-02-09 20:42:37.592672] Found 31 rows in the table.
+[2026-02-09 20:42:37.693954] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:42:37.694071] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:42:37.707700] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:42:37.720265] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:42:37.750117] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:42:37.769179] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:42:37.781178] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:42:37.793735] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:42:37.805673] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:42:37.818143] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:42:37.830296] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:42:37.842948] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:42:37.854519] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:42:37.866652] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:42:37.878539] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:42:37.900963] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:42:37.913499] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:42:37.926331] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:42:37.939010] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:42:37.951173] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:42:37.963076] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:42:37.975699] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:42:37.987825] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:42:38.000066] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:42:38.012496] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:42:38.025135] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:42:38.038089] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:42:38.050247] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:42:38.062190] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:42:38.074487] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:42:38.085929] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:42:38.097822] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:42:38.185303] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:42:38.185818] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:42:38.185799
+[2026-02-09 20:42:38.185854] NBA.com Advanced data fetch complete.
+[2026-02-09 20:42:54.611034] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:43:09.328016] No cookie/privacy popup found.
+[2026-02-09 20:43:09.346950] Found 31 rows in the table.
+[2026-02-09 20:43:09.441282] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:43:09.441395] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:43:09.455175] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:43:09.475436] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:43:09.487948] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:43:09.500635] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:43:09.513690] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:43:09.526076] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:43:09.538458] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:43:09.551321] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:43:09.563803] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:43:09.576103] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:43:09.588717] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:43:09.602095] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:43:09.615213] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:43:09.627715] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:43:09.640136] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:43:09.653189] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:43:09.665783] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:43:09.678847] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:43:09.691594] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:43:09.704346] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:43:09.717169] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:43:09.729335] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:43:09.741699] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:43:09.754205] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:43:09.767078] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:43:09.779842] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:43:09.792570] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:43:09.805023] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:43:09.817777] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:43:09.830350] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:43:09.921049] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:43:09.921573] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:43:09.921550
+[2026-02-09 20:43:09.921620] NBA.com Advanced data fetch complete.
+[2026-02-09 20:43:15.185440] Starting NBA.com Advanced tab Playwright headless scrape...
+[2026-02-09 20:43:25.393838] Found 31 rows in the table.
+[2026-02-09 20:43:25.441664] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', 'GP RANK', 'W RANK', 'L RANK', 'MIN RANK', 'OFFRTG RANK', 'DEFRTG RANK', 'NETRTG RANK', 'AST% RANK', 'AST/TO RANK', 'ASTRATIO RANK', 'OREB% RANK', 'DREB% RANK', 'REB% RANK', 'TORATIO RANK', 'EFG% RANK', 'TS% RANK', 'PACE RANK', 'PIE RANK']
+[2026-02-09 20:43:25.441755] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:43:25.450222] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:43:25.461471] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:43:25.470595] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:43:25.480664] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:43:25.490436] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:43:25.500707] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:43:25.510890] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:43:25.519821] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:43:25.530323] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:43:25.539830] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:43:25.583500] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:43:25.601650] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:43:25.612035] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:43:25.621672] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:43:25.632057] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:43:25.640962] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:43:25.650473] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:43:25.659475] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:43:25.668749] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:43:25.678955] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:43:25.687910] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:43:25.699178] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:43:25.708023] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:43:25.717462] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:43:25.729607] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:43:25.741282] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:43:25.750353] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:43:25.759382] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:43:25.767967] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:43:25.776981] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:43:25.832241] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:43:25.838314] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:43:25.838282
+[2026-02-09 20:43:25.838367] NBA.com Advanced data fetch complete.
+[2026-02-09 20:52:36.394346] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 20:52:51.547518] No cookie/privacy popup found.
+[2026-02-09 20:52:51.563404] Found 31 rows in the table.
+[2026-02-09 20:52:51.650754] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 20:52:51.650839] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 20:52:51.663249] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 20:52:51.675105] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 20:52:51.686438] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 20:52:51.697956] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 20:52:51.709370] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 20:52:51.720531] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 20:52:51.731678] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 20:52:51.742692] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 20:52:51.753298] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 20:52:51.764892] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 20:52:51.776982] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 20:52:51.787855] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 20:52:51.798467] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 20:52:51.810222] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 20:52:51.821621] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 20:52:51.833246] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 20:52:51.844629] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 20:52:51.855855] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 20:52:51.866975] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 20:52:51.878180] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 20:52:51.889746] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 20:52:51.901593] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 20:52:51.921106] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 20:52:51.933014] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 20:52:51.944010] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 20:52:51.954367] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 20:52:51.965708] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 20:52:51.976811] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 20:52:51.987450] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 20:52:51.998535] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 20:52:52.082615] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 20:52:52.084334] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 20:52:52.084312
+[2026-02-09 20:52:52.084365] NBA.com Advanced data fetch complete.
+[2026-02-09 21:10:36.704388] Starting NBA.com Advanced tab headless scrape...
+[2026-02-09 21:10:51.645583] No cookie/privacy popup found.
+[2026-02-09 21:10:51.663005] Found 31 rows in the table.
+[2026-02-09 21:10:51.763735] Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+[2026-02-09 21:10:51.763837] Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+[2026-02-09 21:10:51.777092] Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=105.9, NET=11.8, PACE=100.94
+[2026-02-09 21:10:51.788600] Parsed: TEAM=Detroit Pistons, OFF=116.4, DEF=108.4, NET=8.1, PACE=100.64
+[2026-02-09 21:10:51.799969] Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+[2026-02-09 21:10:51.811554] Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+[2026-02-09 21:10:51.822925] Parsed: TEAM=Denver Nuggets, OFF=121.0, DEF=116.8, NET=4.2, PACE=98.41
+[2026-02-09 21:10:51.834193] Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+[2026-02-09 21:10:51.845604] Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.8
+[2026-02-09 21:10:51.856854] Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+[2026-02-09 21:10:51.867885] Parsed: TEAM=Los Angeles Lakers, OFF=116.5, DEF=116.5, NET=0.0, PACE=99.53
+[2026-02-09 21:10:51.878866] Parsed: TEAM=Minnesota Timberwolves, OFF=116.6, DEF=112.8, NET=3.9, PACE=101.39
+[2026-02-09 21:10:51.889505] Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+[2026-02-09 21:10:51.900371] Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+[2026-02-09 21:10:51.912008] Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=113.8, NET=1.5, PACE=99.53
+[2026-02-09 21:10:51.923008] Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.72
+[2026-02-09 21:10:51.933563] Parsed: TEAM=Miami Heat, OFF=113.7, DEF=111.7, NET=2.0, PACE=104.92
+[2026-02-09 21:10:51.945897] Parsed: TEAM=Orlando Magic, OFF=113.4, DEF=114.1, NET=-0.6, PACE=100.78
+[2026-02-09 21:10:51.957370] Parsed: TEAM=Atlanta Hawks, OFF=113.8, DEF=114.7, NET=-0.9, PACE=102.87
+[2026-02-09 21:10:51.968593] Parsed: TEAM=Charlotte Hornets, OFF=117.1, DEF=114.9, NET=2.2, PACE=98.6
+[2026-02-09 21:10:51.980116] Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+[2026-02-09 21:10:51.991653] Parsed: TEAM=Portland Trail Blazers, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.84
+[2026-02-09 21:10:52.002910] Parsed: TEAM=Chicago Bulls, OFF=113.7, DEF=117.5, NET=-3.8, PACE=102.33
+[2026-02-09 21:10:52.014248] Parsed: TEAM=Milwaukee Bucks, OFF=113.0, DEF=116.6, NET=-3.7, PACE=98.56
+[2026-02-09 21:10:52.025484] Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+[2026-02-09 21:10:52.036570] Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+[2026-02-09 21:10:52.048025] Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.7, NET=-8.1, PACE=102.88
+[2026-02-09 21:10:52.059329] Parsed: TEAM=Brooklyn Nets, OFF=110.5, DEF=118.0, NET=-7.5, PACE=96.63
+[2026-02-09 21:10:52.070496] Parsed: TEAM=New Orleans Pelicans, OFF=112.3, DEF=118.4, NET=-6.1, PACE=101.07
+[2026-02-09 21:10:52.080989] Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+[2026-02-09 21:10:52.100006] Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+[2026-02-09 21:10:52.111830] Parsed: TEAM=Sacramento Kings, OFF=110.2, DEF=119.8, NET=-9.6, PACE=100.0
+[2026-02-09 21:10:52.207572] Scraped 30 teams from NBA.com Advanced tab
+[2026-02-09 21:10:52.209418] ✅ Updated nba_stats_cache.json with 30 teams at 2026-02-09 21:10:52.209400
+[2026-02-09 21:10:52.209452] NBA.com Advanced data fetch complete.
