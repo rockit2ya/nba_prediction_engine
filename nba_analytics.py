@@ -38,15 +38,59 @@ HEADERS = {
     'Connection': 'keep-alive',
 }
 
+
 CACHE_FILE = "nba_stats_cache.json"
-TIMESTAMP_FILE = ".stats_timestamp"
 LEAGUE_BASELINE = {'OFF_RATING': 115.5, 'DEF_RATING': 115.5, 'PACE': 99.2, 'NET_RATING': 0.0}
 
-def get_cache_time():
-    if os.path.exists(TIMESTAMP_FILE):
-        with open(TIMESTAMP_FILE, 'r') as f:
-            return f.read()
-    return "No Cache Found (Baseline Active)"
+def get_cache_times():
+    times = {}
+    # Stats cache
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, 'r') as f:
+                stats_cache = json.load(f)
+            times['stats'] = stats_cache.get('timestamp', 'Unknown')
+        except Exception:
+            times['stats'] = 'Unknown'
+    else:
+        times['stats'] = 'Missing'
+    # Injuries cache
+    if os.path.exists('nba_injuries.csv'):
+        try:
+            with open('nba_injuries.csv', 'r') as f:
+                first_line = f.readline()
+            if first_line.startswith('# timestamp:'):
+                times['injuries'] = first_line.strip().split(':', 1)[1].strip()
+            else:
+                times['injuries'] = 'Unknown'
+        except Exception:
+            times['injuries'] = 'Unknown'
+    else:
+        times['injuries'] = 'Missing'
+    # News cache
+    if os.path.exists('nba_news_cache.json'):
+        try:
+            with open('nba_news_cache.json', 'r') as f:
+                news_cache = json.load(f)
+            times['news'] = news_cache.get('timestamp', 'Unknown')
+        except Exception:
+            times['news'] = 'Unknown'
+    else:
+        times['news'] = 'Missing'
+    # Rest penalty cache
+    if os.path.exists('nba_rest_penalty_cache.csv'):
+        try:
+            with open('nba_rest_penalty_cache.csv', 'r') as f:
+                first_line = f.readline()
+            if first_line.startswith('# timestamp:'):
+                times['rest'] = first_line.strip().split(':', 1)[1].strip()
+            else:
+                times['rest'] = 'Unknown'
+        except Exception:
+            times['rest'] = 'Unknown'
+    else:
+        times['rest'] = 'Missing'
+    return times
 
 def calculate_pace_and_ratings(season='2025-26', last_n_games=10, force_refresh=False):
     """
@@ -60,130 +104,79 @@ def calculate_pace_and_ratings(season='2025-26', last_n_games=10, force_refresh=
     # Prefer cached data (most reliable)
     if not force_refresh and os.path.exists(CACHE_FILE):
         try:
-            cached = pd.read_json(CACHE_FILE)
-            cache_time = get_cache_time()
+            with open(CACHE_FILE, 'r') as f:
+                cache = json.load(f)
+            df = pd.DataFrame(cache['data'])
+            # Convert dict-of-dicts to DataFrame
+            df = pd.DataFrame({col: list(col_dict.values()) for col, col_dict in cache['data'].items()})
+            if 'TEAM_ID' not in df.columns:
+                all_nba_teams = teams.get_teams()
+                name_to_id = {t['full_name']: t['id'] for t in all_nba_teams}
+                df['TEAM_ID'] = df['TEAM_NAME'].map(name_to_id)
+            cache_time = get_cache_times()['stats']
             print(f"[✓] Using cached team stats (from {cache_time})")
-            return cached
+            return df
         except Exception as e:
             print(f"[!] Cache corrupted, attempting fresh fetch...")
 
-    # Try nba_api first
-    api_success = False
-    if force_refresh or not os.path.exists(CACHE_FILE):
-        for attempt in range(2):
-            try:
-                print(f"[...] Fetching live stats from NBA API (attempt {attempt+1}/2)...")
-                adv = leaguedashteamstats.LeagueDashTeamStats(
-                    season=season, last_n_games=last_n_games, 
-                    measure_type_detailed_defense='Advanced', headers=HEADERS, timeout=45
-                ).get_data_frames()[0]
-                if not adv.empty:
-                    adv.to_json(CACHE_FILE)
-                    with open(TIMESTAMP_FILE, 'w') as f:
-                        f.write(datetime.now().strftime("%I:%M %p"))
-                    print("[✓] Retrieved live stats from NBA API")
-                    api_success = True
-                    return adv[['TEAM_ID', 'TEAM_NAME', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'PACE']]
-            except Exception as e:
-                print(f"[!] API unavailable: {type(e).__name__}")
-                time.sleep(2)
-
-    # If nba_api fails, try Selenium fetcher
-    if (not api_success) and (force_refresh or not os.path.exists(CACHE_FILE) or os.path.getsize(CACHE_FILE) == 0):
-        print("[!] nba_api failed. Trying Selenium data fetcher...")
-        try:
-            import subprocess
-            result = subprocess.run(['python', 'nba_data_fetcher_advanced.py'], capture_output=True, text=True, timeout=90)
-            print(result.stdout)
-            if os.path.exists(CACHE_FILE) and os.path.getsize(CACHE_FILE) > 0:
-                cached = pd.read_json(CACHE_FILE)
-                print("[✓] Data fetched via Selenium script.")
-                return cached
-        except Exception as e:
-            print(f"[!] Selenium fetcher failed: {e}")
-
-    # If Selenium fails, try Playwright fetcher
-    if (not api_success) and (not os.path.exists(CACHE_FILE) or os.path.getsize(CACHE_FILE) == 0):
-        print("[!] Selenium failed. Trying Playwright data fetcher...")
-        try:
-            import subprocess
-            result = subprocess.run(['python', 'nba_data_fetcher_playwright.py'], capture_output=True, text=True, timeout=90)
-            print(result.stdout)
-            if os.path.exists(CACHE_FILE) and os.path.getsize(CACHE_FILE) > 0:
-                cached = pd.read_json(CACHE_FILE)
-                print("[✓] Data fetched via Playwright script.")
-                return cached
-        except Exception as e:
-            print(f"[!] Playwright fetcher failed: {e}")
-
-    # Fallback to existing cache
+    # Only use cached data for stats
     if os.path.exists(CACHE_FILE):
         try:
-            cached = pd.read_json(CACHE_FILE)
-            cache_time = get_cache_time()
-            print(f"[⚠] All live fetchers failed. Using cached stats (from {cache_time})")
-            return cached
-        except:
+            with open(CACHE_FILE, 'r') as f:
+                cache = json.load(f)
+            df = pd.DataFrame({col: list(col_dict.values()) for col, col_dict in cache['data'].items()})
+            cache_time = get_cache_times()['stats']
+            print(f"[✓] Using cached team stats (from {cache_time})")
+            return df
+        except Exception as e:
+            print(f"[!] Cache corrupted, unable to load stats.")
             pass
-
     # Last resort: baseline (should rarely reach here)
-    print("[✗] Unable to fetch live or cached data. Using baseline fallback.")
-    print("[→] Suggestion: Run 'python fetch_all_data.sh' to create fresh sample data")
+    print("[✗] Unable to fetch cached data. Using baseline fallback.")
     all_nba_teams = teams.get_teams()
     baseline_list = [{'TEAM_ID': t['id'], 'TEAM_NAME': t['full_name'], **LEAGUE_BASELINE} for t in all_nba_teams]
     return pd.DataFrame(baseline_list)
 
 def get_live_injuries():
-    """Scrapes ESPN for real-time injury statuses (updated for 2026 HTML)."""
-    url = "https://www.espn.com/nba/injuries"
-    try:
-        res = session.get(url, timeout=10)
-        soup = BeautifulSoup(res.text, 'html.parser')
-        teams = {}
-        # ESPN: Each team section is a logo img, team name (h2), then a table of injuries
-        for h2 in soup.find_all('h2'):
-            team_name = h2.text.strip()
-            table = h2.find_next('table')
-            if not table:
-                continue
-            players = []
-            for row in table.find_all('tr')[1:]:
-                cols = row.find_all('td')
-                if len(cols) >= 5:
-                    player = cols[0].text.strip()
-                    pos = cols[1].text.strip()
-                    date = cols[2].text.strip()
-                    status = cols[3].text.strip().lower()
-                    note = cols[4].text.strip()
-                    players.append({'name': player, 'position': pos, 'date': date, 'status': status, 'note': note})
-            teams[team_name] = players
-        return teams
-    except Exception as e:
-        print(f"[!] ESPN injury scrape failed ({type(e).__name__}): {e}")
+    # Only use cached injuries, no real-time fetch
+    if os.path.exists("nba_injuries.csv"):
+        try:
+            injuries_df = pd.read_csv("nba_injuries.csv")
+            print("[⚠] Using cached injury data from nba_injuries.csv")
+            injuries = {}
+            for _, row in injuries_df.iterrows():
+                team = row.get('team', row.get('TEAM_NAME', 'Unknown'))
+                player_dict = {
+                    'name': row.get('player', row.get('name', 'Unknown')),
+                    'position': row.get('position', ''),
+                    'date': row.get('date', ''),
+                    'status': row.get('status', ''),
+                    'note': row.get('note', row.get('injury', ''))
+                }
+                injuries.setdefault(team, []).append(player_dict)
+            return injuries
+        except Exception as ce:
+            print(f"[✗] Failed to load cached injuries: {ce}")
+            return {}
+    else:
+        print("[✗] No cached injury data found.")
         return {}
 
 # Placeholder for real-time news integration
 def get_real_time_news():
-    def check_news_completeness(news_items):
-        # Check for late-breaking news or missing updates
-        late_news = [item for item in news_items if 'late scratch' in item['title'].lower() or 'late scratch' in item['summary'].lower()]
-        if late_news:
-            print("[!] Late-breaking news detected:")
-            for item in late_news:
-                print(f"  {item['title']} | {item['published']}")
-        else:
-            print("[✓] No late-breaking news found.")
-    # Example: Use RSS feeds from ESPN, NBA, or Twitter API
-    feeds = [
-        'https://www.espn.com/espn/rss/nba/news',
-        'https://www.nba.com/rss/nba_news.xml'
-    ]
-    news_items = []
-    for feed_url in feeds:
-        d = feedparser.parse(feed_url)
-        for entry in d.entries:
-            news_items.append({'title': entry.title, 'summary': entry.summary, 'published': entry.published})
-    return news_items
+    # Only use cached news, no real-time fetch
+    if os.path.exists("nba_news_cache.json"):
+        try:
+            with open("nba_news_cache.json", "r") as f:
+                news = json.load(f)
+            print("[⚠] Using cached news data from nba_news_cache.json")
+            return news.get('data', [])
+        except Exception as ce:
+            print(f"[✗] Failed to load cached news: {ce}")
+            return []
+    else:
+        print("[✗] No cached news data found.")
+        return []
 
 def get_star_tax_weighted(team_id, out_players):
     """Calculates player impact using On-Off splits."""
@@ -205,11 +198,28 @@ def get_star_tax_weighted(team_id, out_players):
 
 def get_rest_penalty(team_id):
     """Determines if a team is on a B2B."""
+    # Use cached rest penalty data
     try:
-        log = teamgamelog.TeamGameLog(team_id=team_id, headers=HEADERS, timeout=8).get_data_frames()[0]
-        last_date = datetime.strptime(log.iloc[0]['GAME_DATE'], '%b %d, %Y')
-        return -2.5 if (datetime.now() - last_date).days <= 1 else 0
-    except: 
+        import pandas as pd
+        all_nba_teams = teams.get_teams()
+        id_to_name = {t['id']: t['full_name'] for t in all_nba_teams}
+        team_name = id_to_name.get(team_id, None)
+        if not team_name:
+            return 0
+        # Skip header comment line if present
+        with open('nba_rest_penalty_cache.csv', 'r') as f:
+            lines = f.readlines()
+        if lines[0].startswith('#'):
+            lines = lines[1:]
+        from io import StringIO
+        rest_df = pd.read_csv(StringIO(''.join(lines)))
+        row = rest_df[rest_df['TEAM_NAME'] == team_name]
+        if not row.empty:
+            return float(row.iloc[0]['REST_PENALTY'])
+        else:
+            return 0
+    except Exception as e:
+        print(f"[!] Rest penalty cache error: {e}")
         return 0
 
 def predict_nba_spread(away_team, home_team, force_refresh=False):
@@ -218,11 +228,49 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     Uses Multi-threading to fetch situational data in parallel.
     """
     ratings = calculate_pace_and_ratings(force_refresh=force_refresh)
-    # Improved fuzzy matching for team names
+    # Map short/abbreviated team names to full names for robust fuzzy matching
+    team_names = ratings['TEAM_NAME'].tolist()
+    # Build mapping from common short names to full names
+    short_to_full = {
+        'Hawks': 'Atlanta Hawks',
+        'Celtics': 'Boston Celtics',
+        'Nets': 'Brooklyn Nets',
+        'Hornets': 'Charlotte Hornets',
+        'Bulls': 'Chicago Bulls',
+        'Cavaliers': 'Cleveland Cavaliers',
+        'Mavericks': 'Dallas Mavericks',
+        'Nuggets': 'Denver Nuggets',
+        'Pistons': 'Detroit Pistons',
+        'Warriors': 'Golden State Warriors',
+        'Rockets': 'Houston Rockets',
+        'Pacers': 'Indiana Pacers',
+        'Clippers': 'LA Clippers',
+        'Lakers': 'Los Angeles Lakers',
+        'Grizzlies': 'Memphis Grizzlies',
+        'Heat': 'Miami Heat',
+        'Bucks': 'Milwaukee Bucks',
+        'Timberwolves': 'Minnesota Timberwolves',
+        'Pelicans': 'New Orleans Pelicans',
+        'Knicks': 'New York Knicks',
+        'Thunder': 'Oklahoma City Thunder',
+        'Magic': 'Orlando Magic',
+        '76ers': 'Philadelphia 76ers',
+        'Suns': 'Phoenix Suns',
+        'Trail Blazers': 'Portland Trail Blazers',
+        'Kings': 'Sacramento Kings',
+        'Spurs': 'San Antonio Spurs',
+        'Raptors': 'Toronto Raptors',
+        'Jazz': 'Utah Jazz',
+        'Wizards': 'Washington Wizards',
+    }
     def fuzzy_team_match(name, team_list):
+        # Try direct match, then mapping, then fuzzy
+        if name in team_list:
+            return name
+        if name in short_to_full and short_to_full[name] in team_list:
+            return short_to_full[name]
         matches = difflib.get_close_matches(name, team_list, n=1, cutoff=0.7)
         return matches[0] if matches else name
-    team_names = ratings['TEAM_NAME'].tolist()
     h_team = fuzzy_team_match(home_team, team_names)
     a_team = fuzzy_team_match(away_team, team_names)
     try:
@@ -230,28 +278,73 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
         a_row = ratings[ratings['TEAM_NAME'] == a_team].iloc[0]
     except: raise Exception(f"Fuzzy match failed for {away_team} or {home_team}")
 
-    # SPEED UP: Parallel Execution for Situational Checks (with timeouts)
+    # SPEED UP: Parallel Execution for Situational Checks (with reduced timeouts)
     with ThreadPoolExecutor(max_workers=4) as executor:
         future_injuries = executor.submit(get_live_injuries)
         future_h_rest = executor.submit(get_rest_penalty, h_row['TEAM_ID'])
         future_a_rest = executor.submit(get_rest_penalty, a_row['TEAM_ID'])
         future_news = executor.submit(get_real_time_news)
         try:
-            injuries = future_injuries.result(timeout=10)
-        except:
-            injuries = {}
+            injuries = future_injuries.result(timeout=5)
+        except Exception as e:
+            print(f"[!] Injury scrape timeout or error: {e}")
+            print("[→] Suggestion: Run 'bash fetch_all_nba_data.sh' to manually refresh NBA injuries cache.")
+            # Try loading cached injuries
+            if os.path.exists("nba_injuries.csv"):
+                try:
+                    injuries_df = pd.read_csv("nba_injuries.csv")
+                    print("[⚠] Using cached injury data from nba_injuries.csv")
+                    # Convert to dict: {team: [player dicts]}
+                    injuries = {}
+                    for _, row in injuries_df.iterrows():
+                        team = row.get('team', row.get('TEAM_NAME', 'Unknown'))
+                        player_dict = {
+                            'name': row.get('player', row.get('name', 'Unknown')),
+                            'position': row.get('position', ''),
+                            'date': row.get('date', ''),
+                            'status': row.get('status', ''),
+                            'note': row.get('note', row.get('injury', ''))
+                        }
+                        injuries.setdefault(team, []).append(player_dict)
+                except Exception as ce:
+                    print(f"[✗] Failed to load cached injuries: {ce}")
+                    injuries = {}
+            else:
+                injuries = {}
+                print("[✗] No cached injury data found.")
         try:
-            h_rest = future_h_rest.result(timeout=10)
-        except:
+            h_rest = future_h_rest.result(timeout=5)
+        except Exception as e:
+            print(f"[!] Home rest penalty timeout or error: {e}")
+            print("[→] Suggestion: Run 'bash fetch_all_data.sh' to manually refresh NBA stats cache.")
             h_rest = 0
         try:
-            a_rest = future_a_rest.result(timeout=10)
-        except:
+            a_rest = future_a_rest.result(timeout=5)
+        except Exception as e:
+            print(f"[!] Away rest penalty timeout or error: {e}")
+            print("[→] Suggestion: Run 'bash fetch_all_data.sh' to manually refresh NBA stats cache.")
             a_rest = 0
         try:
-            news = future_news.result(timeout=10)
-        except:
-            news = []
+            news = future_news.result(timeout=5)
+        except Exception as e:
+            # Try loading cached news first, suppress scrape error if cache is available
+            if os.path.exists("nba_news_cache.json"):
+                try:
+                    with open("nba_news_cache.json", "r") as f:
+                        news = json.load(f)
+                    print("[⚠] Using cached news data from nba_news_cache.json")
+                    # Check for fallback/no-news message
+                    if len(news) == 1 and news[0].get('title','').lower().startswith('no nba news'):
+                        print("[✗] No reliable NBA news data available. Prediction engine will not proceed.")
+                        raise SystemExit(1)
+                except Exception as ce:
+                    print(f"[✗] Failed to load cached news: {ce}")
+                    news = []
+            else:
+                print(f"[!] News scrape timeout or error: {e}")
+                print("[→] Suggestion: Run 'bash fetch_all_nba_data.sh' to manually refresh NBA news cache.")
+                news = []
+                print("[✗] No cached news data found.")
         # Flag if any player status is 'out', 'late scratch', or 'day-to-day' for today
         flag = False
         today = datetime.now().strftime('%b %d')
@@ -285,10 +378,25 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
 
 def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly):
     filename = f"bet_tracker_{datetime.now().strftime('%Y-%m-%d')}.csv"
-    exists = os.path.isfile(filename)
-    # Add manual notes column for context
     notes = input("Enter any manual notes/context for this bet (press Enter to skip): ")
-    with open(filename, 'a', newline='') as f:
+    import csv
+    import os
+    rows = []
+    header = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
+    # Read existing rows if file exists
+    if os.path.isfile(filename):
+        with open(filename, 'r', newline='') as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+        # Remove header if present
+        if rows and rows[0] == header:
+            rows = rows[1:]
+    # Remove any existing entry for this game (ID, Away, Home)
+    new_row = [gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, 'PENDING', notes]
+    rows = [row for row in rows if not (len(row) >= 3 and row[0] == gid and row[1] == away and row[2] == home)]
+    rows.append(new_row)
+    # Write back with header
+    with open(filename, 'w', newline='') as f:
         writer = csv.writer(f)
-        if not exists: writer.writerow(['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes'])
-        writer.writerow([gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, 'PENDING', notes])
+        writer.writerow(header)
+        writer.writerows(rows)

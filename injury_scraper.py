@@ -35,7 +35,11 @@ def fetch_injury_data(url=INJURY_URL):
     return pd.DataFrame(data)
 
 def save_injury_data(df, filename="nba_injuries.csv"):
-    df.to_csv(filename, index=False)
+    from datetime import datetime
+    timestamp = datetime.now().isoformat()
+    with open(filename, "w") as f:
+        f.write(f"# timestamp: {timestamp}\n")
+        df.to_csv(f, index=False)
 
 def main():
     df = fetch_injury_data()

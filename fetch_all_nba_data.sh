@@ -1,0 +1,59 @@
+#!/bin/bash
+# Unified script to fetch and cache all NBA data for robust offline operation
+# Runs all fetchers and caches their outputs
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+LOG=fetch_all_nba_data.log
+> "$LOG"
+
+run_fetcher() {
+  local script="$1"
+  echo "[INFO] Running $script..." | tee -a "$LOG"
+  if python "$script" >> "$LOG" 2>&1; then
+    echo "[SUCCESS] $script completed." | tee -a "$LOG"
+  else
+    echo "[ERROR] $script failed. Check $LOG for details." | tee -a "$LOG"
+    exit 1
+  fi
+}
+
+# Fetch NBA team advanced stats
+run_fetcher nba_data_fetcher_advanced.py
+
+# Fetch and cache injury data
+run_fetcher injury_scraper.py
+
+run_fetcher nba_lineup_and_news_monitor.py
+
+run_fetcher rest_penalty_scraper.py
+
+# Fetch and cache NBA news for offline use
+echo "[INFO] Caching NBA news..." | tee -a "$LOG"
+if python cache_nba_news.py >> "$LOG" 2>&1; then
+  echo "[SUCCESS] NBA news cached." | tee -a "$LOG"
+else
+  echo "[ERROR] NBA news cache failed. Check $LOG for details." | tee -a "$LOG"
+  exit 1
+fi
+
+# Final check for all caches
+if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache.json ] && [ -s nba_rest_penalty_cache.csv ]; then
+  echo "" | tee -a "$LOG"
+  echo "[SUMMARY] NBA Data Fetch Counts:" | tee -a "$LOG"
+  # Parse counts from log
+  STATS_COUNT=$(grep -Eo 'Scraped [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1)
+  INJURY_COUNT=$(grep -Eo 'Saved injury data to nba_injuries.csv with [0-9]+ records' "$LOG" | grep -Eo '[0-9]+' | tail -1)
+  REST_COUNT=$(grep -Eo 'Cached rest penalty data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1)
+  NEWS_COUNT=$(grep -Eo 'Cached [0-9]+ NBA news items' "$LOG" | grep -Eo '[0-9]+' | tail -1)
+  echo "  - NBA Team Stats: ${STATS_COUNT:-0} teams" | tee -a "$LOG"
+  echo "  - Injuries: ${INJURY_COUNT:-0} records" | tee -a "$LOG"
+  echo "  - Rest Penalty: ${REST_COUNT:-0} teams" | tee -a "$LOG"
+  echo "  - NBA News: ${NEWS_COUNT:-0} items" | tee -a "$LOG"
+  echo "" | tee -a "$LOG"
+  echo "[COMPLETE] All NBA data cached successfully. Engine is ready for offline operation." | tee -a "$LOG"
+else
+  echo "[FATAL] One or more caches missing or empty. Data fetch failed." | tee -a "$LOG"
+  exit 2
+fi

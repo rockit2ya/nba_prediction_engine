@@ -15,7 +15,7 @@ from selenium.webdriver.common.by import By
 
 NBA_ADV_URL = "https://www.nba.com/stats/teams/advanced"
 CACHE_FILE = "nba_stats_cache.json"
-LOG_FILE = "nba_data_fetcher.log"
+LOG_FILE = "nba_data_fetcher_advanced.log"
 
 # --- Utility Functions ---
 def log(msg):
@@ -144,12 +144,14 @@ def save_stats(df):
     json_dict = {}
     for col in df.columns:
         json_dict[col] = df[col].to_dict()
+    cache = {
+        "timestamp": datetime.now().isoformat(),
+        "data": json_dict
+    }
     with open(CACHE_FILE, 'w') as f:
-        json.dump(json_dict, f)
-    # Always update timestamp file
-    with open('.stats_timestamp', 'w') as tsf:
-        tsf.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    log(f"✅ Updated {CACHE_FILE} with {len(df)} teams at {datetime.now()}")
+        json.dump(cache, f)
+    # No longer update .stats_timestamp file (timestamp is in cache)
+    log(f"✅ Updated {CACHE_FILE} with {len(df)} teams at {cache['timestamp']}")
 
 def main():
     df = fetch_nba_advanced_stats()

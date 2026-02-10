@@ -1,0 +1,72 @@
+[INFO] Running nba_data_fetcher_advanced.py...
+Starting NBA.com Advanced tab headless scrape...
+No cookie/privacy popup found.
+Found 31 rows in the table.
+Header columns: ['', 'TEAM', 'GP', 'W', 'L', 'MIN', 'OFFRTG', 'DEFRTG', 'NETRTG', 'AST%', 'AST/TO', 'AST\nRATIO', 'OREB%', 'DREB%', 'REB%', 'TOV%', 'EFG%', 'TS%', 'PACE', 'PIE', 'POSS', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']
+Indices - TEAM: 1, OFF: 6, DEF: 7, NET: 8, PACE: 18
+Parsed: TEAM=Oklahoma City Thunder, OFF=117.7, DEF=106.0, NET=11.7, PACE=100.91
+Parsed: TEAM=Detroit Pistons, OFF=116.5, DEF=108.4, NET=8.1, PACE=100.49
+Parsed: TEAM=San Antonio Spurs, OFF=116.5, DEF=111.1, NET=5.4, PACE=100.8
+Parsed: TEAM=Boston Celtics, OFF=120.0, DEF=112.7, NET=7.3, PACE=95.68
+Parsed: TEAM=Denver Nuggets, OFF=120.9, DEF=116.8, NET=4.0, PACE=98.42
+Parsed: TEAM=New York Knicks, OFF=118.6, DEF=113.1, NET=5.5, PACE=98.51
+Parsed: TEAM=Cleveland Cavaliers, OFF=117.2, DEF=113.4, NET=3.8, PACE=101.75
+Parsed: TEAM=Minnesota Timberwolves, OFF=116.8, DEF=112.6, NET=4.2, PACE=101.51
+Parsed: TEAM=Houston Rockets, OFF=117.3, DEF=112.2, NET=5.1, PACE=96.73
+Parsed: TEAM=Los Angeles Lakers, OFF=116.4, DEF=116.6, NET=-0.1, PACE=99.52
+Parsed: TEAM=Toronto Raptors, OFF=114.0, DEF=112.1, NET=1.9, PACE=99.37
+Parsed: TEAM=Phoenix Suns, OFF=114.5, DEF=112.3, NET=2.2, PACE=99.02
+Parsed: TEAM=Philadelphia 76ers, OFF=115.4, DEF=114.2, NET=1.2, PACE=99.58
+Parsed: TEAM=Golden State Warriors, OFF=114.3, DEF=112.2, NET=2.1, PACE=100.73
+Parsed: TEAM=Miami Heat, OFF=113.6, DEF=111.7, NET=1.9, PACE=104.9
+Parsed: TEAM=Orlando Magic, OFF=113.5, DEF=113.8, NET=-0.3, PACE=100.75
+Parsed: TEAM=Atlanta Hawks, OFF=113.6, DEF=114.9, NET=-1.3, PACE=102.97
+Parsed: TEAM=Portland Trail Blazers, OFF=113.6, DEF=115.4, NET=-1.8, PACE=101.85
+Parsed: TEAM=Charlotte Hornets, OFF=116.9, DEF=114.9, NET=2.0, PACE=98.49
+Parsed: TEAM=LA Clippers, OFF=115.6, DEF=115.8, NET=-0.3, PACE=96.7
+Parsed: TEAM=Chicago Bulls, OFF=113.6, DEF=117.4, NET=-3.9, PACE=102.43
+Parsed: TEAM=Milwaukee Bucks, OFF=112.7, DEF=116.7, NET=-3.9, PACE=98.57
+Parsed: TEAM=Memphis Grizzlies, OFF=113.2, DEF=115.4, NET=-2.2, PACE=101.37
+Parsed: TEAM=Dallas Mavericks, OFF=110.3, DEF=113.2, NET=-2.9, PACE=102.5
+Parsed: TEAM=Utah Jazz, OFF=113.6, DEF=121.4, NET=-7.8, PACE=102.9
+Parsed: TEAM=Brooklyn Nets, OFF=110.6, DEF=117.8, NET=-7.2, PACE=96.84
+Parsed: TEAM=New Orleans Pelicans, OFF=112.4, DEF=118.0, NET=-5.5, PACE=101.03
+Parsed: TEAM=Washington Wizards, OFF=109.4, DEF=120.2, NET=-10.8, PACE=101.94
+Parsed: TEAM=Indiana Pacers, OFF=108.5, DEF=116.2, NET=-7.7, PACE=101.57
+Parsed: TEAM=Sacramento Kings, OFF=110.0, DEF=119.8, NET=-9.9, PACE=99.99
+Scraped 30 teams from NBA.com Advanced tab
+✅ Updated nba_stats_cache.json with 30 teams at 2026-02-10T14:49:59.469623
+NBA.com Advanced data fetch complete.
+[SUCCESS] nba_data_fetcher_advanced.py completed.
+[INFO] Running injury_scraper.py...
+Saved injury data to nba_injuries.csv with 3 records.
+[SUCCESS] injury_scraper.py completed.
+[INFO] Running nba_lineup_and_news_monitor.py...
+--- ESPN NBA Lineups/Injuries ---
+
+--- ESPN NBA News RSS ---
+Tue, 10 Feb 2026 12:30:28 EST | What we know about Luka's Lakers fit, 365 days after his debut: Big decisions loom
+Tue, 10 Feb 2026 13:05:15 EST | LeBron calls out Lakers: We're not a title team
+Tue, 10 Feb 2026 13:05:15 EST | Four tossed after brawl in Pistons-Hornets game
+Tue, 10 Feb 2026 13:05:14 EST | Ingram added to All-Star Game, replacing Curry
+Tue, 10 Feb 2026 13:05:14 EST | Wolves' Reid, Hawks' Gueye ejected after scuffle
+Tue, 10 Feb 2026 13:05:15 EST | Clips say NBA probe not impacting their decisions
+Tue, 10 Feb 2026 13:05:15 EST | Tatum cleared to practice with G League squad
+Tue, 10 Feb 2026 13:05:15 EST | OKC's Topic returns to court after cancer diagnosis
+Tue, 10 Feb 2026 13:05:14 EST | Warriors star Butler has surgery on torn ACL
+Tue, 10 Feb 2026 13:05:14 EST | ✍ Trade grades: Reactions for every transaction
+[SUCCESS] nba_lineup_and_news_monitor.py completed.
+[INFO] Running rest_penalty_scraper.py...
+[✓] Cached rest penalty data for 8 teams to nba_rest_penalty_cache.csv (timestamp: 2026-02-10T14:50:02.174630)
+[SUCCESS] rest_penalty_scraper.py completed.
+[INFO] Caching NBA news...
+[✓] Cached 18 NBA news items to nba_news_cache.json.
+[SUCCESS] NBA news cached.
+
+[SUMMARY] NBA Data Fetch Counts:
+  - NBA Team Stats: 30 teams
+  - Injuries: 3 records
+  - Rest Penalty: 8 teams
+  - NBA News: 18 items
+
+[COMPLETE] All NBA data cached successfully. Engine is ready for offline operation.

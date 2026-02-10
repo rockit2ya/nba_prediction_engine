@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from nba_api.live.nba.endpoints import scoreboard
 from nba_api.stats.static import teams
-from nba_analytics import predict_nba_spread, log_bet, get_cache_time, calculate_pace_and_ratings
+from nba_analytics import predict_nba_spread, log_bet, get_cache_times, calculate_pace_and_ratings
 
 def calculate_kelly(market, fair_line):
     """Conservative Quarter-Kelly Criterion bankroll management."""
@@ -19,12 +19,18 @@ def run_ui():
     print("\n[SYSTEM] Initializing Pro Analytics Engine...")
     calculate_pace_and_ratings()
 
+    from nba_analytics import get_cache_times
+
     try:
         while True:
-            data_age = get_cache_time()
+            cache_times = get_cache_times()
             print("\n" + "="*75)
             print(f"--- 🏀 NBA PRO ENGINE (V3) | {today_display} ---")
-            print(f"--- DATA REFRESH STATUS: {data_age} ---")
+            print("--- DATA CACHE FRESHNESS ---")
+            print(f"  Team Stats:   {cache_times.get('stats', 'Unknown')}")
+            print(f"  Injuries:     {cache_times.get('injuries', 'Unknown')}")
+            print(f"  News:         {cache_times.get('news', 'Unknown')}")
+            print(f"  Rest Penalty: {cache_times.get('rest', 'Unknown')}")
             print("="*75)
 
             schedule = {}
@@ -102,8 +108,7 @@ def run_ui():
                     # Log to date-stamped CSV
                     log_bet(choice, away, home, fair_line, market, edge, recommendation, kelly)
 
-                    print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard in 5 seconds...")
-                    time.sleep(5) # Automatic return delay
+                    print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
 
                 except Exception as e:
                     print(f"❌ Error during analysis: {e}")
