@@ -32,9 +32,3 @@ if [ ! -s nba_stats_cache.json ]; then
 else
   echo "[COMPLETE] Data fetch successful. nba_stats_cache.json is ready." | tee -a "$LOG"
 fi
-if [ ! -s nba_stats_cache.json ]; then
-  echo "[FATAL] nba_stats_cache.json still missing or empty. Data fetch failed." | tee -a "$LOG"
-  exit 2
-else
-  echo "[COMPLETE] Data fetch successful. nba_stats_cache.json is ready." | tee -a "$LOG"
-fi
