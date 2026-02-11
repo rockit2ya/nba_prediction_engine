@@ -78,6 +78,51 @@ This workflow ensures your predictions are based on the most current cached data
 
 ---
 
+## 📊 Post-Bet Analysis: Entering Wins & Losses
+
+After games finish, update your bet tracker CSV and run the post-mortem tool to review model accuracy.
+
+### Step 1: Update the `Result` Column
+
+Open the bet tracker CSV for that day (e.g., `bet_tracker_2026-02-10.csv`) and change each row's `Result` from `PENDING` to `WIN` or `LOSS`. Optionally, add the final score in the `Notes` column for margin analysis.
+
+**Before (pending):**
+```csv
+G3,Mavericks,Suns,6.52,-8.5,15.02,9.26%,Mavericks,PENDING,
+```
+
+**After (updated):**
+```csv
+G3,Mavericks,Suns,6.52,-8.5,15.02,9.26%,Mavericks,WIN,Final Score: Mavericks 112 - Suns 105
+```
+
+| Column   | Value                                    | Description                              |
+| -------- | ---------------------------------------- | ---------------------------------------- |
+| `Result` | `WIN`, `LOSS`, or `PENDING`              | Set manually after games finish          |
+| `Notes`  | `Final Score: Team1 123 - Team2 110`     | Optional — enables margin-of-victory/defeat analysis |
+
+### Step 2: Run the Post-Mortem
+
+```bash
+python post_mortem.py
+```
+
+When prompted, enter the date:
+
+```
+Enter date (YYYY-MM-DD): 2026-02-10
+```
+
+### What the Post-Mortem Reports
+
+- **Win/Loss/Pending counts** for high-signal bets (Edge ≥ 5)
+- **Loss details:** margin of defeat, injury impact on the picked team, and low-edge flags
+- **Win details:** average margin of victory
+- **Automated pattern analysis:** flags losses correlated with injuries or insufficient edge
+- **Overall win rate and average edge** for the day
+
+---
+
 ## 🧰 Optional Utility Tools
 
 These scripts provide additional analysis, data checks, and manual overrides for advanced users:
