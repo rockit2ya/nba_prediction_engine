@@ -81,12 +81,16 @@ def parse_margin(row):
     m = re.search(r'Final Score: (\w+) (\d+) - (\w+) (\d+)', notes)
     if not m:
         return None
-    away, away_score, home, home_score = m.groups()
-    away_score, home_score = int(away_score), int(home_score)
-    if str(row['Pick']).strip() == str(row['Home']).strip():
-        return home_score - away_score
+    team1, score1, team2, score2 = m.groups()
+    score1, score2 = int(score1), int(score2)
+    pick = str(row['Pick']).strip()
+    home = str(row['Home']).strip()
+    away = str(row['Away']).strip()
+    # Determine which score belongs to the picked team
+    if pick == home:
+        return score2 - score1 if team1 == away or team1 != home else score1 - score2
     else:
-        return away_score - home_score
+        return score1 - score2 if team1 == away or team1 != home else score2 - score1
 
 
 def calc_units(row):
@@ -282,10 +286,10 @@ def daily_post_mortem(date_str):
             notes = str(row.get('Notes', ''))
             print(f"  ✅ {row['Away']} @ {row['Home']} | Pick: {row['Pick']} | Edge: {row['Edge']}")
             if margin is not None:
-                print(f"     Margin: +{margin}  |  {notes}")
+                print(f"     Margin: {margin:+d}  |  {notes}")
                 win_margins.append(margin)
         if win_margins:
-            print(f"\n  Avg margin of victory: {sum(win_margins)/len(win_margins):.1f}")
+            print(f"\n  Avg margin of victory: {sum(win_margins)/len(win_margins):+.1f}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -323,7 +327,8 @@ def lifetime_dashboard():
     print(f"  Record:          {len(wins)}W - {len(losses)}L")
     print(f"  Win Rate:        {win_rate:.1%}  (Break-even: {BREAKEVEN_RATE:.1%})")
     print(f"  Grade:           {grade_win_rate(win_rate, total)}")
-    print(f"  Total P/L:       {total_units:+.1f} units")
+    kelly_units = completed.apply(calc_kelly_units, axis=1).sum()
+    print(f"  Total P/L:       {total_units:+.1f} units  (Kelly-sized: {kelly_units:+.2f} units)")
     print(f"  ROI:             {roi:+.1f}%")
 
     # ── Real Dollar P/L (if bet data available) ──
@@ -365,11 +370,12 @@ def lifetime_dashboard():
         high_units = high.apply(calc_units, axis=1).sum()
         high_roi = (high_units / (len(high) * 1.1)) * 100
 
+        high_kelly = high.apply(calc_kelly_units, axis=1).sum()
         section("High-Signal Bets (Edge ≥ 5)")
         print(f"  Record:          {len(hw)}W - {len(hl)}L")
         print(f"  Win Rate:        {high_rate:.1%}")
         print(f"  Grade:           {grade_win_rate(high_rate, len(high))}")
-        print(f"  P/L:             {high_units:+.1f} units")
+        print(f"  P/L:             {high_units:+.1f} units  (Kelly-sized: {high_kelly:+.2f} units)")
         print(f"  ROI:             {high_roi:+.1f}%")
 
     # ── Edge Calibration ──
@@ -378,7 +384,8 @@ def lifetime_dashboard():
     print(f"  {'─'*10} {'─'*12} {'─'*12} {'─'*10} {'─'*15}")
 
     calibration_ok = True
-    prev_rate = 0
+    prev_rate = None  # None means no previous tier with data yet
+    tier_rates = []   # collect (label, rate, n) for all non-empty tiers
     for (lo, hi_bound), label in zip(EDGE_TIERS, EDGE_TIER_LABELS):
         tier = completed[(completed['Edge'] >= lo) & (completed['Edge'] < hi_bound)]
         if tier.empty:
@@ -388,17 +395,21 @@ def lifetime_dashboard():
         tl = tier[tier['Result'] == 'LOSS']
         tr = len(tw) / len(tier) if len(tier) > 0 else 0
         tu = tier.apply(calc_units, axis=1).sum()
+        tier_rates.append((label, tr, len(tier)))
 
         verdict = "✅" if tr >= BREAKEVEN_RATE else "⚠️"
-        if tr < prev_rate and len(tier) >= 3:
+        # Check inversion: if this tier's rate is lower than ANY previous tier
+        if prev_rate is not None and tr < prev_rate:
             verdict = "🔻 Inverted"
             calibration_ok = False
 
         print(f"  {label:<10} {f'{len(tw)}W-{len(tl)}L':<12} {tr:.1%}{'':<7} {tu:+.1f}{'':<5} {verdict}")
-        prev_rate = tr
+        prev_rate = tr  # track last non-empty tier rate
 
-    if calibration_ok:
+    if calibration_ok and len(tier_rates) >= 2:
         print("\n  ✅ Calibration: Higher edges are winning at higher rates — model is well-calibrated.")
+    elif calibration_ok:
+        print("\n  ⚠️  Calibration: Not enough tier data to fully assess (need 2+ tiers with bets).")
     else:
         print("\n  ⚠️  Calibration issue: A lower-edge tier is outperforming a higher one.")
         print("     This may indicate the model overestimates large edges, or sample size is too small.")
@@ -656,6 +667,145 @@ def daily_trend():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  5. BANKROLL TRACKER
+# ═══════════════════════════════════════════════════════════════════════════════
+
+BANKROLL_FILE = "bankroll.json"
+
+
+def load_bankroll():
+    """Load bankroll settings from bankroll.json."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), BANKROLL_FILE)
+    if os.path.exists(path):
+        import json
+        with open(path) as f:
+            return json.load(f)
+    return None
+
+
+def save_bankroll(data):
+    """Save bankroll settings to bankroll.json."""
+    import json
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), BANKROLL_FILE)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def bankroll_tracker():
+    """Track bankroll over time using flat units or real dollars."""
+    header("💵 BANKROLL TRACKER")
+
+    bankroll_data = load_bankroll()
+    if bankroll_data is None:
+        section("Setup — First Time")
+        print("  No bankroll configured yet. Let's set one up.\n")
+        try:
+            starting = float(input("  Starting bankroll ($): ").strip().replace('$', '').replace(',', ''))
+        except (ValueError, EOFError):
+            print("  ❌ Invalid amount.")
+            return
+        try:
+            unit_str = input("  Unit size ($ per flat bet, default = bankroll/100): ").strip().replace('$', '').replace(',', '')
+            unit_size = float(unit_str) if unit_str else round(starting / 100, 2)
+        except (ValueError, EOFError):
+            unit_size = round(starting / 100, 2)
+
+        bankroll_data = {
+            "starting_bankroll": starting,
+            "unit_size": unit_size,
+            "created": datetime.now().strftime('%Y-%m-%d')
+        }
+        save_bankroll(bankroll_data)
+        print(f"\n  ✅ Bankroll saved: ${starting:,.2f} | Unit size: ${unit_size:,.2f}")
+
+    starting = bankroll_data['starting_bankroll']
+    unit_size = bankroll_data['unit_size']
+
+    # Load all completed bets
+    df = load_all_trackers()
+    completed = filter_completed(df)
+
+    if completed.empty:
+        section("Summary")
+        print(f"  Starting Bankroll:  ${starting:,.2f}")
+        print(f"  Unit Size:          ${unit_size:,.2f}")
+        print("  No completed bets yet.")
+        return
+
+    dates = sorted(completed['Date'].unique())
+    has_dollars = has_bet_data(completed)
+
+    section("Configuration")
+    print(f"  Starting Bankroll:  ${starting:,.2f}")
+    print(f"  Unit Size:          ${unit_size:,.2f}")
+    print(f"  Tracking Since:     {bankroll_data.get('created', dates[0])}")
+
+    # Day-by-day bankroll
+    section("Daily Bankroll")
+    print(f"  {'Date':<12} {'Record':<10} {'Day P/L':<12} {'Balance':<12} {'vs Start'}")
+    print(f"  {'─'*12} {'─'*10} {'─'*12} {'─'*12} {'─'*10}")
+
+    balance = starting
+    for d in dates:
+        day_df = completed[completed['Date'] == d]
+        w = (day_df['Result'] == 'WIN').sum()
+        l = (day_df['Result'] == 'LOSS').sum()
+        rec = f"{w}W-{l}L"
+
+        # Use real dollars if available, otherwise unit_size * flat units
+        if has_dollars:
+            day_df_copy = day_df.copy()
+            day_df_copy['RealPL'] = day_df_copy.apply(calc_real_dollars, axis=1)
+            tracked = day_df_copy.dropna(subset=['RealPL'])
+            if not tracked.empty:
+                day_pl = tracked['RealPL'].sum()
+            else:
+                day_pl = day_df.apply(calc_units, axis=1).sum() * unit_size
+        else:
+            day_pl = day_df.apply(calc_units, axis=1).sum() * unit_size
+
+        balance += day_pl
+        change = balance - starting
+        change_pct = (change / starting) * 100
+        icon = '📈' if day_pl >= 0 else '📉'
+        print(f"  {d:<12} {rec:<10} {icon} ${day_pl:>+9,.2f}  ${balance:>10,.2f}  {change_pct:+.1f}%")
+
+    section("💰 Bankroll Summary")
+    total_change = balance - starting
+    total_pct = (total_change / starting) * 100
+    print(f"  Starting:     ${starting:,.2f}")
+    print(f"  Current:      ${balance:,.2f}")
+    print(f"  Net Change:   ${total_change:+,.2f}  ({total_pct:+.1f}%)")
+
+    if balance <= 0:
+        print("\n  🔴 BUSTED — bankroll depleted.")
+    elif balance < starting * 0.8:
+        print(f"\n  ⚠️  Down {abs(total_pct):.0f}% — consider reducing unit size.")
+    elif balance > starting * 1.2:
+        print(f"\n  🔥 Up {total_pct:.0f}% — consider increasing unit size to ${balance / 100:,.2f}.")
+    else:
+        print(f"\n  📊 Bankroll within normal range.")
+
+    # Kelly recommendation
+    total_bets = len(completed)
+    wins = (completed['Result'] == 'WIN').sum()
+    if total_bets >= 10:
+        wr = wins / total_bets
+        section("Kelly Bet Sizing Recommendation")
+        # Quarter-kelly at -110
+        edge = wr - (1 - wr) * 1.1
+        full_kelly = max(0, edge / 1.0)  # fraction of bankroll
+        quarter_kelly = full_kelly / 4
+        recommended_bet = balance * quarter_kelly
+        print(f"  Lifetime Win Rate:  {wr:.1%}")
+        print(f"  Full Kelly:         {full_kelly:.1%} of bankroll")
+        print(f"  Quarter-Kelly:      {quarter_kelly:.1%} of bankroll")
+        print(f"  Recommended Bet:    ${recommended_bet:,.2f} per play")
+        if recommended_bet <= 0:
+            print("  ⚠️  Kelly says don't bet — no edge detected yet.")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  MAIN MENU
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -681,6 +831,7 @@ def main():
         print("  [2] Lifetime Performance Dashboard")
         print("  [3] Edge Calibration Report")
         print("  [4] Daily Trend & Profit Curve")
+        print("  [5] Bankroll Tracker")
         print("  [Q] Quit\n")
 
         choice = input("  Select: ").strip().upper()
@@ -704,6 +855,9 @@ def main():
 
         elif choice == '4':
             daily_trend()
+
+        elif choice == '5':
+            bankroll_tracker()
 
         else:
             print("  ❌ Invalid choice.")

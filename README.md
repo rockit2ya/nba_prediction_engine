@@ -79,6 +79,7 @@ Follow these steps to get the most out of the NBA Prediction Engine:
      - **[2] Lifetime Performance Dashboard** — all-time record, ROI, streaks, drawdown, and pro-level verdict
      - **[3] Edge Calibration Report** — do bigger edges win at higher rates?
      - **[4] Daily Trend & Profit Curve** — cumulative P/L over time with ASCII chart
+     - **[5] Bankroll Tracker** — real-dollar bankroll tracking with Kelly bet sizing
 
 This workflow ensures your predictions are based on the most current cached data, with built-in alerts for late-breaking news and injuries, and a clear audit trail for every bet.
 
@@ -138,13 +139,14 @@ You can also edit the CSV directly. Open the bet tracker CSV and change each row
 python post_mortem.py
 ```
 
-You'll see a menu with four options:
+You'll see a menu with five options:
 
 ```
   [1] Single-Day Post-Mortem
   [2] Lifetime Performance Dashboard
   [3] Edge Calibration Report
   [4] Daily Trend & Profit Curve
+  [5] Bankroll Tracker
   [Q] Quit
 ```
 
@@ -155,12 +157,12 @@ You'll see a menu with four options:
 - Win/Loss/Pending counts for all bets and high-signal bets (Edge ≥ 5)
 - Loss details with margin of defeat, injury impact, and low-edge flags
 - Win details with average margin of victory
-- Day P/L in units
+- Day P/L in units and real dollars (when bet amounts are tracked)
 
 **[2] Lifetime Performance Dashboard** — All-time aggregate stats:
 
 - Overall record, win rate, and letter grade (Elite / Pro-Level / Profitable / Below Breakeven)
-- Total P/L in units and ROI %
+- Total P/L in units and Kelly-weighted units
 - **💰 Real Money P/L** — net profit/loss in dollars, total wagered, and ROI (shown when bet amounts are tracked)
 - **Sportsbook breakdown** — win rate and P/L per book (DraftKings, FanDuel, etc.)
 - High-signal bet performance
@@ -177,6 +179,8 @@ You'll see a menu with four options:
 **[3] Edge Calibration Report** — Fine-grained breakdown by edge bucket (0–3, 3–5, 5–8, 8–10, 10–15, 15–20, 20+) with visual bars, P/L, and Edge-vs-Win-Rate correlation.
 
 **[4] Daily Trend & Profit Curve** — Day-by-day P/L with cumulative rolling win rate and an ASCII profit curve chart.
+
+**[5] Bankroll Tracker** — Set a starting bankroll and unit size, then track day-by-day balance changes with real dollars. Includes Quarter-Kelly recommended bet sizing based on lifetime win rate.
 
 ---
 
