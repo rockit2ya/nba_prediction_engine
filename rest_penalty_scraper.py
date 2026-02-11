@@ -44,30 +44,45 @@ def scrape_rest_penalty():
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     driver = webdriver.Chrome(options=options)
-    driver.get(ESPN_SCOREBOARD_URL)
-    html = driver.page_source
-    driver.quit()
-    soup = BeautifulSoup(html, 'html.parser')
+
     today = datetime.now().date()
-    team_last_game = {}
-    # Find all Scoreboard sections
-    for scoreboard in soup.find_all('section', class_='Scoreboard'):
-        teams = []
+    yesterday = today - timedelta(days=1)
+
+    # Scrape YESTERDAY's scoreboard to find teams that played yesterday
+    yesterday_url = f"{ESPN_SCOREBOARD_URL}/_/date/{yesterday.strftime('%Y%m%d')}"
+    driver.get(yesterday_url)
+    html_yesterday = driver.page_source
+    soup_yesterday = BeautifulSoup(html_yesterday, 'html.parser')
+
+    teams_played_yesterday = set()
+    for scoreboard in soup_yesterday.find_all('section', class_='Scoreboard'):
         for team_div in scoreboard.find_all('div', class_='ScoreCell__TeamName--shortDisplayName'):
             team_name = team_div.text.strip()
             if team_name:
-                teams.append(team_name)
-        if len(teams) == 2:
-            for team in teams:
-                team_last_game[team] = today
-    # Calculate rest penalty
+                teams_played_yesterday.add(team_name)
+
+    # Scrape TODAY's scoreboard to find teams playing today
+    driver.get(ESPN_SCOREBOARD_URL)
+    html_today = driver.page_source
+    driver.quit()
+    soup_today = BeautifulSoup(html_today, 'html.parser')
+
+    teams_playing_today = set()
+    for scoreboard in soup_today.find_all('section', class_='Scoreboard'):
+        for team_div in scoreboard.find_all('div', class_='ScoreCell__TeamName--shortDisplayName'):
+            team_name = team_div.text.strip()
+            if team_name:
+                teams_playing_today.add(team_name)
+
+    # Calculate rest penalty: B2B = played yesterday AND playing today
     penalty_data = []
-    for team, last_game in team_last_game.items():
-        days_since = (today - last_game).days
-        penalty = -2.5 if days_since == 1 else 0
-        # Map ESPN short display name to full NBA team name
+    all_teams = teams_playing_today | teams_played_yesterday
+    for team in all_teams:
+        is_b2b = team in teams_played_yesterday and team in teams_playing_today
+        penalty = -2.5 if is_b2b else 0
         full_team_name = SHORT_TO_FULL_TEAM.get(team, team)
-        penalty_data.append({'TEAM_NAME': full_team_name, 'LAST_GAME_DATE': str(last_game), 'REST_PENALTY': penalty})
+        last_game_date = str(yesterday) if team in teams_played_yesterday else ''
+        penalty_data.append({'TEAM_NAME': full_team_name, 'LAST_GAME_DATE': last_game_date, 'REST_PENALTY': penalty})
     df = pd.DataFrame(penalty_data)
     timestamp = datetime.now().isoformat()
     # Write CSV with timestamp as header comment

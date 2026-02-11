@@ -286,9 +286,9 @@ def daily_post_mortem(date_str):
                 print(f"     Margin: {margin}  |  {notes}")
                 loss_margins.append(margin)
 
-            # Injury check (exact match, not substring)
+            # Injury check (alias-aware matching — Pick is nickname, CSV has full name)
             if injuries is not None:
-                team_inj = injuries[injuries['team'].str.strip().str.lower() == str(row['Pick']).strip().lower()]
+                team_inj = injuries[injuries['team'].apply(lambda t: names_match(t, str(row['Pick'])))]
                 if not team_inj.empty:
                     injury_count += 1
                     for _, inj in team_inj.iterrows():
@@ -544,7 +544,7 @@ def lifetime_dashboard():
 
     # Check 3: High-signal win rate
     if not high.empty:
-        high_wr = len(hw) / len(high)
+        high_wr = len(hw) / (len(hw) + len(hl)) if (len(hw) + len(hl)) > 0 else 0
         checks.append(("High-Signal Win Rate > 55%", high_wr >= 0.55, f"{high_wr:.1%}"))
 
     # Check 4: Edge calibration
@@ -654,8 +654,8 @@ def daily_trend():
     daily['Units'] = daily.apply(lambda r: r['W'] * 1.0 + r['L'] * -1.1, axis=1)
     daily['CumUnits'] = daily['Units'].cumsum()
     daily['CumW'] = daily['W'].cumsum()
-    daily['CumBets'] = daily['Bets'].cumsum()
-    daily['RollingRate'] = daily['CumW'] / daily['CumBets']
+    daily['CumDecided'] = (daily['W'] + daily['L']).cumsum()
+    daily['RollingRate'] = daily.apply(lambda r: r['CumW'] / r['CumDecided'] if r['CumDecided'] > 0 else 0, axis=1)
 
     # Real dollar P/L per day if available
     show_dollars = has_bet_data(completed)
