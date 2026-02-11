@@ -15,6 +15,7 @@ def calculate_kelly(market, fair_line):
 
 def run_ui():
     today_display = datetime.now().strftime("%B %d, %Y")
+    custom_counter = 0  # Unique counter for custom matchup GIDs
 
     # Pre-load analytics data/cache
     print("\n[SYSTEM] Initializing Pro Analytics Engine...")
@@ -77,16 +78,26 @@ def run_ui():
 
             elif choice in schedule or choice == 'C':
                 if choice == 'C':
+                    custom_counter += 1
+                    gid = f"C{custom_counter}"
                     away = input("Enter Away Team Name: ")
                     home = input("Enter Home Team Name: ")
                 else:
+                    gid = choice
                     away, home = schedule[choice]
 
                 print(f"\n[ANALYZING] {away} vs {home}...")
 
                 try:
-                    line_in = input(f"Market Line for {home} (e.g., -5.5): ")
-                    market = float(line_in)
+                    line_in = input(f"Market Line for {home} (e.g., -5.5): ").strip()
+                    if not line_in:
+                        print("❌ No market line entered. Returning to scoreboard.")
+                        continue
+                    try:
+                        market = float(line_in)
+                    except ValueError:
+                        print(f"❌ Invalid market line '{line_in}'. Must be a number (e.g., -5.5).")
+                        continue
 
 
                     # Pro Logic: Injury Star Tax + Fatigue + HCA + late-breaking flag
@@ -128,7 +139,7 @@ def run_ui():
                     bet_val = bet_in if bet_in else ''
 
                     # Log to date-stamped CSV
-                    log_bet(choice, away, home, fair_line, market, edge, recommendation, kelly, book, odds_val, bet_val)
+                    log_bet(gid, away, home, fair_line, market, edge, recommendation, kelly, book, odds_val, bet_val)
 
                     print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
 

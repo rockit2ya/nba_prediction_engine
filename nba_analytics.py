@@ -185,7 +185,7 @@ def get_star_tax_weighted(team_id, out_players):
                 p_impact = on_off[on_off['PLAYER_ID'] == p_id]['ON_COURT_PLUS_MINUS'].values
                 if len(p_impact) > 0: total_tax += (p_impact[0] * weight)
         return round(total_tax / 2, 2)
-    except:
+    except Exception:
         return 0
 
 def get_rest_penalty(team_id):
@@ -292,12 +292,24 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     # Calculate Bayesian Star Tax
     h_tax = get_star_tax_weighted(h_row['TEAM_ID'], injuries.get(h_row['TEAM_NAME'], []))
     a_tax = get_star_tax_weighted(a_row['TEAM_ID'], injuries.get(a_row['TEAM_NAME'], []))
-    # News factor: late scratches and coaching changes
+    # News factor: late scratches and coaching changes (scoped to THIS matchup only)
     news_factor = 0
+    matchup_keywords = set()
+    for name in [h_team, a_team, home_team, away_team]:
+        matchup_keywords.add(name.lower())
+    # Extract nicknames (last word of full team name, e.g., "Lakers" from "Los Angeles Lakers")
+    for name in [h_team, a_team]:
+        parts = name.split()
+        if parts:
+            matchup_keywords.add(parts[-1].lower())
     for item in news:
-        if 'late scratch' in item['title'].lower() or 'late scratch' in item['summary'].lower():
+        combined = item.get('title', '').lower() + ' ' + item.get('summary', '').lower()
+        # Only apply penalty if news mentions one of THIS game's teams
+        if not any(kw in combined for kw in matchup_keywords):
+            continue
+        if 'late scratch' in combined:
             news_factor -= 2
-        if 'coach fired' in item['title'].lower() or 'coach fired' in item['summary'].lower():
+        if 'coach fired' in combined:
             news_factor -= 1
     # Core Math
     rest_adj = h_rest - a_rest
@@ -323,6 +335,16 @@ def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, book='', odds='',
         # Remove header if present (support old and new format)
         if rows and (rows[0] == header or rows[0] == old_header):
             rows = rows[1:]
+    # Migrate old 10-column rows to 14-column format
+    migrated_rows = []
+    for row in rows:
+        if len(row) == 10:
+            # Old: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Result,Notes]
+            # New: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Book,Odds,Bet,Result,Payout,Notes]
+            migrated_rows.append(row[:8] + ['', '', ''] + [row[8]] + [''] + [row[9] if len(row) > 9 else ''])
+        else:
+            migrated_rows.append(row)
+    rows = migrated_rows
     # Remove any existing entry for this game (ID, Away, Home)
     new_row = [gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, book, odds, bet_amount, 'PENDING', '', notes]
     rows = [row for row in rows if not (len(row) >= 3 and row[0] == gid and row[1] == away and row[2] == home)]

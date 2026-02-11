@@ -38,9 +38,9 @@ def resolve_nickname(name):
         return name
     if name in NICKNAME_ALIASES:
         return NICKNAME_ALIASES[name]
-    # Fuzzy fallback: check if name is a substring of any nickname
-    for nick in NICKNAME_MAP:
-        if name.lower() in nick.lower() or nick.lower() in name.lower():
+    # Exact match against full team names or abbreviations (no substring matching)
+    for nick, info in NICKNAME_MAP.items():
+        if name.lower() == info['full_name'].lower() or name.lower() == info['abbreviation'].lower():
             return nick
     return name
 
@@ -119,16 +119,12 @@ def match_game(row, scores):
     home_csv = resolve_nickname(row['Home'])
 
     for s in scores:
-        # Try matching by nickname
+        # Try matching by nickname (exact match only — no substring)
         away_api = s['away_name']
         home_api = s['home_name']
 
-        away_match = (away_csv.lower() == away_api.lower() or
-                      away_csv.lower() in away_api.lower() or
-                      away_api.lower() in away_csv.lower())
-        home_match = (home_csv.lower() == home_api.lower() or
-                      home_csv.lower() in home_api.lower() or
-                      home_api.lower() in home_csv.lower())
+        away_match = away_csv.lower() == away_api.lower()
+        home_match = home_csv.lower() == home_api.lower()
 
         if away_match and home_match:
             return s
@@ -161,20 +157,27 @@ def determine_result(row, score):
     # Figure out if pick is home or away
     if pick_resolved.lower() == home_resolved.lower():
         # Pick is the home team
-        # Market spread is from the home perspective (negative = home favored)
         actual_margin = home_score - away_score  # positive = home won
-        market = float(row['Market'])
-        # Home covers if actual_margin > -market (market is from home perspective)
-        # e.g., Market = -8.5 means home favored by 8.5; home covers if margin > 8.5
-        # e.g., Market = 3.5 means home is underdog by 3.5; home covers if margin > -3.5
+        try:
+            market = float(row['Market'])
+        except (ValueError, TypeError):
+            return 'PENDING', 'Could not parse Market spread'
+        # PUSH: exact spread tie
+        if actual_margin == (-market):
+            final_score = f"Final Score: {row['Away']} {away_score} - {row['Home']} {home_score}"
+            return 'PUSH', final_score
         covered = actual_margin > (-market)
     elif pick_resolved.lower() == away_resolved.lower():
         # Pick is the away team
         actual_margin = away_score - home_score  # positive = away won
-        market = float(row['Market'])
-        # Market is from home perspective, so away covers if away_margin > market
-        # e.g., Market = -8.5 (home favored), away covers if away_margin > -8.5
-        # e.g., Market = 9.5 (away favored), away covers if away_margin > 9.5
+        try:
+            market = float(row['Market'])
+        except (ValueError, TypeError):
+            return 'PENDING', 'Could not parse Market spread'
+        # PUSH: exact spread tie
+        if actual_margin == market:
+            final_score = f"Final Score: {row['Away']} {away_score} - {row['Home']} {home_score}"
+            return 'PUSH', final_score
         covered = actual_margin > market
     else:
         # Can't match pick to either team — fallback to simple W/L
@@ -200,6 +203,9 @@ def calc_payout(result, bet_str, odds_str):
     if bet <= 0:
         return None
 
+    if odds == 0:
+        return None  # Invalid odds
+
     if result == 'WIN':
         if odds > 0:
             profit = bet * (odds / 100)
@@ -208,6 +214,8 @@ def calc_payout(result, bet_str, odds_str):
         return round(profit, 2)  # net profit only
     elif result == 'LOSS':
         return round(-bet, 2)
+    elif result == 'PUSH':
+        return 0.0  # Push = money returned, no profit/loss
     return None
 
 

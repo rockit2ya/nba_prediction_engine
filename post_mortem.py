@@ -26,6 +26,23 @@ EDGE_TIER_LABELS = ['5–10', '10–15', '15+']
 
 INJURY_FILE = "nba_injuries.csv"
 
+# Common nickname aliases for robust matching
+TEAM_ALIASES = {
+    'blazers': 'trail blazers',
+    'sixers': '76ers',
+    'wolves': 'timberwolves',
+}
+
+def names_match(a, b):
+    """Case-insensitive team name match with alias support."""
+    a_low = a.strip().lower()
+    b_low = b.strip().lower()
+    if a_low == b_low:
+        return True
+    a_resolved = TEAM_ALIASES.get(a_low, a_low)
+    b_resolved = TEAM_ALIASES.get(b_low, b_low)
+    return a_resolved == b_resolved
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  DATA LOADING & HELPERS
@@ -87,11 +104,11 @@ def parse_margin(row):
     pick = str(row['Pick']).strip()
     home = str(row['Home']).strip()
     away = str(row['Away']).strip()
-    # Determine which score belongs to the picked team
-    if pick == home:
-        return score2 - score1 if team1 == away or team1 != home else score1 - score2
+    # Determine which score belongs to the picked team (alias-aware matching)
+    if names_match(pick, home):
+        return score2 - score1 if names_match(team1, away) or not names_match(team1, home) else score1 - score2
     else:
-        return score1 - score2 if team1 == away or team1 != home else score2 - score1
+        return score1 - score2 if names_match(team1, away) or not names_match(team1, home) else score2 - score1
 
 
 def calc_units(row):
@@ -99,6 +116,7 @@ def calc_units(row):
     Calculate units won/lost for a bet at -110 odds.
     WIN  = +1.0 unit profit (risking 1.1 to win 1.0)
     LOSS = -1.1 units (the amount risked)
+    PUSH = 0.0 units (money returned)
     """
     if row['Result'] == 'WIN':
         return 1.0
@@ -126,6 +144,8 @@ def calc_real_dollars(row):
             return round(bet * (100 / abs(odds)), 2)
     elif row['Result'] == 'LOSS':
         return round(-bet, 2)
+    elif row['Result'] == 'PUSH':
+        return 0.0
     return None
 
 
@@ -156,12 +176,14 @@ def calc_kelly_units(row):
 
 
 def filter_completed(df):
-    """Return only WIN/LOSS rows (exclude PENDING)."""
-    return df[df['Result'].isin(['WIN', 'LOSS'])].copy()
+    """Return only WIN/LOSS/PUSH rows (exclude PENDING)."""
+    return df[df['Result'].isin(['WIN', 'LOSS', 'PUSH'])].copy()
 
 
 def filter_high_signal(df):
     """Return only high-signal bets (Edge >= threshold)."""
+    df = df.copy()
+    df['Edge'] = pd.to_numeric(df['Edge'], errors='coerce').fillna(0)
     return df[df['Edge'] >= HIGH_SIGNAL_EDGE].copy()
 
 
@@ -262,15 +284,19 @@ def daily_post_mortem(date_str):
                 print(f"     Margin: {margin}  |  {notes}")
                 loss_margins.append(margin)
 
-            # Injury check
+            # Injury check (exact match, not substring)
             if injuries is not None:
-                team_inj = injuries[injuries['team'].str.contains(str(row['Pick']), case=False, na=False)]
+                team_inj = injuries[injuries['team'].str.strip().str.lower() == str(row['Pick']).strip().lower()]
                 if not team_inj.empty:
                     injury_count += 1
                     for _, inj in team_inj.iterrows():
                         print(f"     🏥 {inj['player']} ({inj['position']}) — {inj['injury']} [{inj['status']}]")
 
-            if float(row['Edge']) < 10:
+            try:
+                edge_val = float(row['Edge'])
+            except (ValueError, TypeError):
+                edge_val = 0.0
+            if edge_val < 10:
                 low_edge_count += 1
 
         print(f"\n  Losses with injury impact:  {injury_count}")
@@ -767,13 +793,13 @@ def bankroll_tracker():
 
         balance += day_pl
         change = balance - starting
-        change_pct = (change / starting) * 100
+        change_pct = (change / starting) * 100 if starting != 0 else 0.0
         icon = '📈' if day_pl >= 0 else '📉'
         print(f"  {d:<12} {rec:<10} {icon} ${day_pl:>+9,.2f}  ${balance:>10,.2f}  {change_pct:+.1f}%")
 
     section("💰 Bankroll Summary")
     total_change = balance - starting
-    total_pct = (total_change / starting) * 100
+    total_pct = (total_change / starting) * 100 if starting != 0 else 0.0
     print(f"  Starting:     ${starting:,.2f}")
     print(f"  Current:      ${balance:,.2f}")
     print(f"  Net Change:   ${total_change:+,.2f}  ({total_pct:+.1f}%)")
