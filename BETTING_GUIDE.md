@@ -17,6 +17,7 @@ python nba_engine_ui.py
 ```
 
 The interactive UI will:
+
 1. ✅ Display today's NBA games
 2. ✅ Let you select a matchup to analyze
 3. ✅ Calculate fair lines from team efficiency, injuries, rest, and pace
@@ -31,7 +32,7 @@ The interactive UI will:
 python update_results.py
 ```
 
-Auto-fetches final scores from the NBA API and fills in WIN/LOSS + Payout.
+Auto-fetches final scores from the NBA API and fills in WIN/LOSS/PUSH + Payout.
 
 ### 4. Analyze Performance
 
@@ -40,7 +41,8 @@ python post_mortem.py
 ```
 
 Menu-driven analyzer with 5 options:
-- **[1] Single-Day Post-Mortem** — win/loss breakdown with injury & margin analysis
+
+- **[1] Single-Day Post-Mortem** — win/loss/push breakdown with injury & margin analysis
 - **[2] Lifetime Dashboard** — all-time record, ROI, streaks, pro-level verdict
 - **[3] Edge Calibration** — do bigger edges win at higher rates?
 - **[4] Daily Trend & Profit Curve** — cumulative P/L with ASCII chart
@@ -53,6 +55,7 @@ Menu-driven analyzer with 5 options:
 Injury data is auto-scraped by `injury_scraper.py` (run via `fetch_all_nba_data.sh`) and cached to `nba_injuries.csv`.
 
 The engine automatically adjusts fair lines based on injury impact:
+
 - **Star players** (Jokic, Luka, LeBron, etc.): 8–12 points impact
 - **Good starters**: 5–8 points impact
 - **Role players**: 2–3 points impact
@@ -74,15 +77,17 @@ Rest penalty data is auto-scraped by `rest_penalty_scraper.py` and cached to `nb
 
 When logging a bet in the engine UI, you'll be prompted for:
 
-| Field | Example | Notes |
-|-------|---------|-------|
+| Field      | Example      | Notes                          |
+| ---------- | ------------ | ------------------------------ |
 | Sportsbook | `DraftKings` | Optional — press Enter to skip |
-| Odds | `-110` | American odds — optional |
-| Bet amount | `50` | Dollar amount — optional |
+| Odds       | `-110`       | American odds — optional       |
+| Bet amount | `50`         | Dollar amount — optional       |
 
 These are saved in the bet tracker CSV. When `update_results.py` populates WIN/LOSS, it auto-calculates the **Payout** column:
+
 - **WIN at -110**: Bet $50 → Payout +$45.45 (profit)
 - **LOSS**: Bet $50 → Payout -$50.00
+- **PUSH** (spread tie): Bet $50 → Payout $0.00 (money returned)
 
 The post-mortem's **Lifetime Dashboard** and **Bankroll Tracker** use this data for real-dollar P/L and sportsbook-level breakdowns.
 
@@ -93,6 +98,7 @@ The post-mortem's **Lifetime Dashboard** and **Bankroll Tracker** use this data 
 Run `python post_mortem.py` → option **[5] Bankroll Tracker**.
 
 On first run, you'll set:
+
 - **Starting bankroll** (e.g., $1,000)
 - **Unit size** (default = bankroll / 100)
 
@@ -109,12 +115,14 @@ python nba_lineup_and_news_monitor.py
 This monitors ESPN and NBA.com headlines for injury/scratch alerts.
 
 **Manual verification (more reliable):**
+
 1. ✅ Check team warm-up videos on NBA.com or ESPN
 2. ✅ Look for starting lineup confirmations
 3. ✅ Check team official Twitter/X
 4. ✅ Review betting line movements (sharp money often signals scratches)
 
 **Key indicators of a late scratch:**
+
 - Line movement of 1+ point in last hour
 - Official "questionable" player ruled out
 
@@ -148,19 +156,20 @@ This monitors ESPN and NBA.com headlines for injury/scratch alerts.
 
 ## 📝 Key Files
 
-| File | Purpose | Update Frequency |
-|------|---------|-----------------|
-| `nba_injuries.csv` | Player injury status | Auto-scraped each run |
-| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties | Auto-scraped each run |
-| `nba_stats_cache.json` | Team efficiency ratings | Auto-fetched each run |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + real $ | Daily |
-| `bankroll.json` | Bankroll config | Set once, auto-maintained |
+| File                         | Purpose                 | Update Frequency          |
+| ---------------------------- | ----------------------- | ------------------------- |
+| `nba_injuries.csv`           | Player injury status    | Auto-scraped each run     |
+| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties  | Auto-scraped each run     |
+| `nba_stats_cache.json`       | Team efficiency ratings | Auto-fetched each run     |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + real $ | Daily                     |
+| `bankroll.json`              | Bankroll config         | Set once, auto-maintained |
 
 ---
 
 ## 🎯 Your Competitive Edge
 
 This system factors in:
+
 - ✅ Team offensive/defensive efficiency
 - ✅ Home court advantage
 - ✅ Pace of play
