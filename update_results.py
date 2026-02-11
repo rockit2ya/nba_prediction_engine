@@ -180,8 +180,9 @@ def determine_result(row, score):
             return 'PUSH', final_score
         covered = actual_margin > market
     else:
-        # Can't match pick to either team — fallback to simple W/L
-        covered = False
+        # Can't match pick to either team — return PENDING instead of false LOSS
+        final_score = f"Final Score: {row['Away']} {away_score} - {row['Home']} {home_score}"
+        return 'PENDING', f"{final_score} (could not match pick '{pick}' to either team)"
 
     final_score = f"Final Score: {row['Away']} {away_score} - {row['Home']} {home_score}"
     result = 'WIN' if covered else 'LOSS'
@@ -288,7 +289,7 @@ def update_tracker(filepath):
             if payout is not None:
                 df.at[idx, 'Payout'] = f"{payout:.2f}"
 
-        icon = '✅' if result == 'WIN' else '❌'
+        icon = '✅' if result == 'WIN' else ('🟰' if result == 'PUSH' else '❌')
         print(f"  {icon} {row['ID']}: {row['Away']} @ {row['Home']} → {result}  ({final_score})")
         updated += 1
 

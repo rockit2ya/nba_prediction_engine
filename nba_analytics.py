@@ -140,7 +140,7 @@ def get_injuries():
         print("[✗] No cached injury data found. Run: bash fetch_all_nba_data.sh")
         return {}
     try:
-        injuries_df = pd.read_csv("nba_injuries.csv")
+        injuries_df = pd.read_csv("nba_injuries.csv", comment='#')
         injuries = {}
         for _, row in injuries_df.iterrows():
             team = row.get('team', row.get('TEAM_NAME', 'Unknown'))
@@ -201,6 +201,8 @@ def get_rest_penalty(team_id):
         # Skip header comment line if present
         with open('nba_rest_penalty_cache.csv', 'r') as f:
             lines = f.readlines()
+        if not lines:
+            return 0
         if lines[0].startswith('#'):
             lines = lines[1:]
         from io import StringIO
@@ -315,7 +317,8 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     rest_adj = h_rest - a_rest
     hca = 3.0 + ((h_row['NET_RATING'] - a_row['NET_RATING']) / 20)
     raw_diff = (h_row['OFF_RATING'] - a_row['DEF_RATING']) - (a_row['OFF_RATING'] - h_row['DEF_RATING'])
-    fair_line = (raw_diff * (h_row['PACE'] / 100)) + hca + rest_adj - h_tax + a_tax + news_factor
+    expected_pace = (h_row['PACE'] + a_row['PACE']) / 2
+    fair_line = (raw_diff * (expected_pace / 100)) + hca + rest_adj - h_tax + a_tax + news_factor
     q_players = [p['name'] for p in (injuries.get(h_row['TEAM_NAME'], []) + injuries.get(a_row['TEAM_NAME'], [])) if 'questionable' in p['status']]
     return round(fair_line, 2), q_players, news, flag
 

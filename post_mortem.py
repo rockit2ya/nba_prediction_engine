@@ -234,6 +234,7 @@ def daily_post_mortem(date_str):
     high = filter_high_signal(completed)
     all_wins = completed[completed['Result'] == 'WIN']
     all_losses = completed[completed['Result'] == 'LOSS']
+    all_pushes = completed[completed['Result'] == 'PUSH']
     pending = df[df['Result'] == 'PENDING']
 
     header(f"📅 Daily Post-Mortem: {date_str}")
@@ -241,10 +242,11 @@ def daily_post_mortem(date_str):
     # Overall day stats
     print(f"\n  Total bets logged:    {len(df)}")
     print(f"  Completed:            {len(completed)}  (Pending: {len(pending)})")
-    print(f"  Wins: {len(all_wins)} | Losses: {len(all_losses)}")
+    print(f"  Wins: {len(all_wins)} | Losses: {len(all_losses)} | Pushes: {len(all_pushes)}")
 
     if len(completed) > 0:
-        day_rate = len(all_wins) / len(completed)
+        decided = len(all_wins) + len(all_losses)  # exclude PUSHes from win-rate
+        day_rate = len(all_wins) / decided if decided > 0 else 0
         day_units = completed.apply(calc_units, axis=1).sum()
         print(f"  Win Rate (all bets):  {day_rate:.1%}")
         print(f"  Day P/L:              {day_units:+.1f} units")
@@ -266,7 +268,7 @@ def daily_post_mortem(date_str):
         section("High-Signal Bets (Edge ≥ 5)")
         print(f"  Count: {len(high)}  |  Wins: {len(hw)}  |  Losses: {len(hl)}")
         if len(high) > 0:
-            print(f"  Win Rate: {len(hw)/len(high):.1%}")
+            print(f"  Win Rate: {len(hw)/(len(hw)+len(hl)):.1%}" if (len(hw)+len(hl)) > 0 else "  Win Rate: N/A")
 
     # Loss analysis
     injuries = load_injuries()
@@ -337,6 +339,7 @@ def lifetime_dashboard():
 
     wins = completed[completed['Result'] == 'WIN']
     losses = completed[completed['Result'] == 'LOSS']
+    pushes = completed[completed['Result'] == 'PUSH']
     pending = df[df['Result'] == 'PENDING']
     dates = sorted(completed['Date'].unique())
 
@@ -345,13 +348,14 @@ def lifetime_dashboard():
     # ── Overview ──
     section("Overview")
     total = len(completed)
-    win_rate = len(wins) / total
+    decided = len(wins) + len(losses)  # exclude PUSHes from win-rate
+    win_rate = len(wins) / decided if decided > 0 else 0
     total_units = completed.apply(calc_units, axis=1).sum()
-    roi = (total_units / (total * 1.1)) * 100  # ROI = profit / total risked
+    roi = (total_units / (decided * 1.1)) * 100 if decided > 0 else 0  # ROI = profit / total risked
 
     print(f"  Date Range:      {dates[0]} → {dates[-1]}  ({len(dates)} day(s))")
     print(f"  Total Bets:      {len(df)}  (Completed: {total}, Pending: {len(pending)})")
-    print(f"  Record:          {len(wins)}W - {len(losses)}L")
+    print(f"  Record:          {len(wins)}W - {len(losses)}L - {len(pushes)}P")
     print(f"  Win Rate:        {win_rate:.1%}  (Break-even: {BREAKEVEN_RATE:.1%})")
     print(f"  Grade:           {grade_win_rate(win_rate, total)}")
     kelly_units = completed.apply(calc_kelly_units, axis=1).sum()
@@ -393,9 +397,10 @@ def lifetime_dashboard():
     if not high.empty:
         hw = high[high['Result'] == 'WIN']
         hl = high[high['Result'] == 'LOSS']
-        high_rate = len(hw) / len(high)
+        high_decided = len(hw) + len(hl)
+        high_rate = len(hw) / high_decided if high_decided > 0 else 0
         high_units = high.apply(calc_units, axis=1).sum()
-        high_roi = (high_units / (len(high) * 1.1)) * 100
+        high_roi = (high_units / (high_decided * 1.1)) * 100 if high_decided > 0 else 0
 
         high_kelly = high.apply(calc_kelly_units, axis=1).sum()
         section("High-Signal Bets (Edge ≥ 5)")
@@ -413,14 +418,17 @@ def lifetime_dashboard():
     calibration_ok = True
     prev_rate = None  # None means no previous tier with data yet
     tier_rates = []   # collect (label, rate, n) for all non-empty tiers
+    completed_cal = completed.copy()
+    completed_cal['Edge'] = pd.to_numeric(completed_cal['Edge'], errors='coerce').fillna(0)
     for (lo, hi_bound), label in zip(EDGE_TIERS, EDGE_TIER_LABELS):
-        tier = completed[(completed['Edge'] >= lo) & (completed['Edge'] < hi_bound)]
+        tier = completed_cal[(completed_cal['Edge'] >= lo) & (completed_cal['Edge'] < hi_bound)]
         if tier.empty:
             print(f"  {label:<10} {'—':<12} {'—':<12} {'—':<10} No data")
             continue
         tw = tier[tier['Result'] == 'WIN']
         tl = tier[tier['Result'] == 'LOSS']
-        tr = len(tw) / len(tier) if len(tier) > 0 else 0
+        tier_decided = len(tw) + len(tl)
+        tr = len(tw) / tier_decided if tier_decided > 0 else 0
         tu = tier.apply(calc_units, axis=1).sum()
         tier_rates.append((label, tr, len(tier)))
 
@@ -458,15 +466,16 @@ def lifetime_dashboard():
         streak_icon = '🔥' if current == 'WIN' else '🧊'
         print(f"  Current Streak:     {streak_icon} {streak} {current}{'S' if streak > 1 else ''}")
 
-    # Max win/loss streaks
+    # Max win/loss streaks (PUSHes don't break streaks)
     max_w_streak = max_l_streak = cur_w = cur_l = 0
     for r in result_labels:
         if r == 'WIN':
             cur_w += 1
             cur_l = 0
-        else:
+        elif r == 'LOSS':
             cur_l += 1
             cur_w = 0
+        # PUSH: don't reset either streak
         max_w_streak = max(max_w_streak, cur_w)
         max_l_streak = max(max_l_streak, cur_l)
     print(f"  Best Win Streak:    {max_w_streak}")
@@ -498,7 +507,8 @@ def lifetime_dashboard():
         Bets=('Result', 'count'),
         AvgEdge=('Edge', 'mean')
     ).reset_index()
-    daily['WinRate'] = daily['W'] / daily['Bets']
+    daily['Decided'] = daily['W'] + daily['L']
+    daily['WinRate'] = daily.apply(lambda r: r['W'] / r['Decided'] if r['Decided'] > 0 else 0, axis=1)
     daily['Units'] = daily.apply(lambda r: r['W'] * 1.0 + r['L'] * -1.1, axis=1)
     daily['CumUnits'] = daily['Units'].cumsum()
 
@@ -575,6 +585,10 @@ def edge_calibration_report():
 
     header("📐 Edge Calibration Report")
 
+    # Coerce Edge to numeric
+    completed = completed.copy()
+    completed['Edge'] = pd.to_numeric(completed['Edge'], errors='coerce').fillna(0)
+
     # Fine-grained edge buckets
     buckets = [(0, 3), (3, 5), (5, 8), (8, 10), (10, 15), (15, 20), (20, float('inf'))]
     bucket_labels = ['0–3', '3–5', '5–8', '8–10', '10–15', '15–20', '20+']
@@ -590,7 +604,8 @@ def edge_calibration_report():
 
         tw = tier[tier['Result'] == 'WIN']
         tl = tier[tier['Result'] == 'LOSS']
-        tr = len(tw) / len(tier)
+        tier_decided = len(tw) + len(tl)
+        tr = len(tw) / tier_decided if tier_decided > 0 else 0
         tu = tier.apply(calc_units, axis=1).sum()
 
         margins = [m for m in (parse_margin(row) for _, row in tier.iterrows()) if m is not None]
@@ -816,8 +831,10 @@ def bankroll_tracker():
     # Kelly recommendation
     total_bets = len(completed)
     wins = (completed['Result'] == 'WIN').sum()
-    if total_bets >= 10:
-        wr = wins / total_bets
+    losses = (completed['Result'] == 'LOSS').sum()
+    decided = wins + losses
+    if decided >= 10:
+        wr = wins / decided
         section("Kelly Bet Sizing Recommendation")
         # Quarter-kelly at -110
         edge = wr - (1 - wr) * 1.1
