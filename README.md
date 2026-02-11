@@ -82,6 +82,10 @@ Follow these steps to get the most out of the NBA Prediction Engine:
 
 This workflow ensures your predictions are based on the most current cached data, with built-in alerts for late-breaking news and injuries, and a clear audit trail for every bet.
 
+> **⏰ NBA API Scoreboard Timing:** The live scoreboard (`scoreboard.ScoreBoard()`) shows the **most recent completed slate** until the NBA rolls over to the next day's games, typically around **10–11am ET**. If you launch the engine early in the day, you'll see last night's final scores instead of tonight's upcoming games. This is normal NBA API behavior — not a bug.
+>
+> **💡 Use the `C` (Custom) command** to analyze any matchup immediately without waiting for the scoreboard to update. Just type `C`, enter the away and home team names, and the engine will run the full analysis using your cached stats, injuries, and rest data. This is the recommended workflow for early-day analysis or when the API is slow to refresh.
+
 ---
 
 ## 📊 Post-Bet Analysis: Entering Wins & Losses
