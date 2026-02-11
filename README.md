@@ -129,7 +129,7 @@ You can also edit the CSV directly. Open the bet tracker CSV and change each row
 | `Book`   | `DraftKings`, `FanDuel`, etc.        | Sportsbook (optional, entered at bet time)            |
 | `Odds`   | `-110`, `+150`, etc.                 | American odds (optional, entered at bet time)         |
 | `Bet`    | `50`, `100`, etc.                    | Dollar amount wagered (optional)                      |
-| `Result` | `WIN`, `LOSS`, `PUSH`, or `PENDING` | Auto-populated by `update_results.py` or set manually |
+| `Result` | `WIN`, `LOSS`, `PUSH`, or `PENDING`  | Auto-populated by `update_results.py` or set manually |
 | `Payout` | `95.45`, `-50`, `0.00`, etc.         | Auto-calculated from Bet/Odds on WIN/LOSS/PUSH        |
 | `Notes`  | `Final Score: Team1 123 - Team2 110` | Auto-populated or set manually for margin analysis    |
 
