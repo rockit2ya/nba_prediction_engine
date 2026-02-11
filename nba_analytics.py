@@ -307,23 +307,24 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     q_players = [p['name'] for p in (injuries.get(h_row['TEAM_NAME'], []) + injuries.get(a_row['TEAM_NAME'], [])) if 'questionable' in p['status']]
     return round(fair_line, 2), q_players, news, flag
 
-def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly):
+def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, book='', odds='', bet_amount=''):
     filename = f"bet_tracker_{datetime.now().strftime('%Y-%m-%d')}.csv"
     notes = input("Enter any manual notes/context for this bet (press Enter to skip): ")
     import csv
     import os
     rows = []
-    header = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
+    header = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Book','Odds','Bet','Result','Payout','Notes']
+    old_header = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
     # Read existing rows if file exists
     if os.path.isfile(filename):
         with open(filename, 'r', newline='') as f:
             reader = csv.reader(f)
             rows = list(reader)
-        # Remove header if present
-        if rows and rows[0] == header:
+        # Remove header if present (support old and new format)
+        if rows and (rows[0] == header or rows[0] == old_header):
             rows = rows[1:]
     # Remove any existing entry for this game (ID, Away, Home)
-    new_row = [gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, 'PENDING', notes]
+    new_row = [gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, book, odds, bet_amount, 'PENDING', '', notes]
     rows = [row for row in rows if not (len(row) >= 3 and row[0] == gid and row[1] == away and row[2] == home)]
     rows.append(new_row)
     # Write back with header

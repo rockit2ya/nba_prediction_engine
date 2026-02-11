@@ -185,6 +185,32 @@ def determine_result(row, score):
     return result, final_score
 
 
+def calc_payout(result, bet_str, odds_str):
+    """
+    Calculate payout based on result, bet amount, and American odds.
+    WIN:  returns total payout (profit + stake)
+    LOSS: returns negative bet amount (lost the stake)
+    """
+    try:
+        bet = float(str(bet_str).replace('$', '').replace(',', '').strip())
+        odds = int(str(odds_str).replace('+', '').strip())
+    except (ValueError, TypeError):
+        return None
+
+    if bet <= 0:
+        return None
+
+    if result == 'WIN':
+        if odds > 0:
+            profit = bet * (odds / 100)
+        else:
+            profit = bet * (100 / abs(odds))
+        return round(profit + bet, 2)  # total return
+    elif result == 'LOSS':
+        return round(-bet, 2)
+    return None
+
+
 def update_tracker(filepath):
     """Main logic: load CSV, fetch scores, update results, save."""
     # Extract date from filename
@@ -195,6 +221,11 @@ def update_tracker(filepath):
     date_str = match.group(1)
 
     df = pd.read_csv(filepath)
+
+    # Ensure string columns don't get inferred as float64
+    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout']:
+        if col in df.columns:
+            df[col] = df[col].astype(str).replace('nan', '')
 
     # Check how many are pending
     pending_mask = df['Result'].str.upper().str.strip() == 'PENDING'
@@ -242,6 +273,12 @@ def update_tracker(filepath):
         result, final_score = determine_result(row, score)
         df.at[idx, 'Result'] = result
         df.at[idx, 'Notes'] = final_score
+
+        # Calculate Payout if Bet and Odds are present
+        if 'Payout' in df.columns and 'Bet' in df.columns and 'Odds' in df.columns:
+            payout = calc_payout(result, row.get('Bet', ''), row.get('Odds', ''))
+            if payout is not None:
+                df.at[idx, 'Payout'] = f"{payout:.2f}"
 
         icon = '✅' if result == 'WIN' else '❌'
         print(f"  {icon} {row['ID']}: {row['Away']} @ {row['Home']} → {result}  ({final_score})")

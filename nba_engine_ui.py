@@ -118,8 +118,17 @@ def run_ui():
                     elif edge > 11:
                         print(f"🚨 EXTREME EDGE ALERT: Check for late-breaking scratches!")
 
+                    # Optional: collect bet details
+                    print("\n  📝 Log bet details (press Enter to skip any):")
+                    book = input("     Sportsbook (e.g., DraftKings, FanDuel): ").strip()
+                    odds_in = input("     Odds (e.g., -110): ").strip()
+                    bet_in = input("     Bet amount in $ (e.g., 50): ").strip()
+
+                    odds_val = odds_in if odds_in else ''
+                    bet_val = bet_in if bet_in else ''
+
                     # Log to date-stamped CSV
-                    log_bet(choice, away, home, fair_line, market, edge, recommendation, kelly)
+                    log_bet(choice, away, home, fair_line, market, edge, recommendation, kelly, book, odds_val, bet_val)
 
                     print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
 
