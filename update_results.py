@@ -205,7 +205,7 @@ def calc_payout(result, bet_str, odds_str):
             profit = bet * (odds / 100)
         else:
             profit = bet * (100 / abs(odds))
-        return round(profit + bet, 2)  # total return
+        return round(profit, 2)  # net profit only
     elif result == 'LOSS':
         return round(-bet, 2)
     return None

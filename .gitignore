@@ -23,6 +23,9 @@ game_schedule.csv
 # Bet tracker (local data, regenerated per session)
 bet_tracker_*.csv
 
+# Bankroll config (personal financial data)
+bankroll.json
+
 # Rendered HTML artifacts
 rendered_*.html
 

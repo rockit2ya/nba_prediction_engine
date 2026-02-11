@@ -78,10 +78,11 @@ def load_injuries():
 def parse_margin(row):
     """Extract win/loss margin from Notes column. Returns margin from pick's perspective."""
     notes = str(row.get('Notes', ''))
-    m = re.search(r'Final Score: (\w+) (\d+) - (\w+) (\d+)', notes)
+    m = re.search(r'Final Score: (.+?) (\d+) - (.+?) (\d+)', notes)
     if not m:
         return None
     team1, score1, team2, score2 = m.groups()
+    team1, team2 = team1.strip(), team2.strip()
     score1, score2 = int(score1), int(score2)
     pick = str(row['Pick']).strip()
     home = str(row['Home']).strip()
