@@ -601,6 +601,8 @@ def lifetime_dashboard():
         print("  🏆 VERDICT: Model is performing at PRO level!")
     elif passed >= len(checks) - 1:
         print("  📈 VERDICT: Model is near pro-level — close to breaking through.")
+    elif win_rate >= BREAKEVEN_RATE and roi > 0:
+        print("  📈 VERDICT: Model is profitable — keep building sample size.")
     elif win_rate >= 0.50:
         print("  ⚠️  VERDICT: Model is above .500 but not yet profitable after vig.")
     else:
