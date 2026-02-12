@@ -124,10 +124,14 @@ def run_ui():
                         print(f"🚨 ALERT: Late-breaking lineup/injury news detected! Double-check before betting.")
 
                     recommendation = home if fair_line < market else away
-                    if edge >= 5 and "HIGH" in conf:
-                        print(f"🔥 STRONG SIGNAL: Bet on {recommendation}")
-                    elif edge > 11:
-                        print(f"🚨 EXTREME EDGE ALERT: Check for late-breaking scratches!")
+                    if edge > 11:
+                        print(f"🚨 EXTREME EDGE ({edge} pts): Bet {recommendation} — verify no late scratches!")
+                    elif edge >= 5 and "HIGH" in conf:
+                        print(f"🔥 STRONG SIGNAL: Bet {recommendation}")
+                    elif edge >= 3:
+                        print(f"📊 LEAN: {recommendation} (moderate edge)")
+                    else:
+                        print(f"📉 LOW EDGE: {recommendation} (thin margin — proceed with caution)")
 
                     # Optional: collect bet details
                     print("\n  📝 Log bet details (press Enter to skip any):")
