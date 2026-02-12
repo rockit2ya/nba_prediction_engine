@@ -62,9 +62,13 @@ Follow these steps to get the most out of the NBA Prediction Engine:
      - Late-breaking news (ESPN RSS)
      - Rest/fatigue penalties and dynamic home-court advantage
 
-3. **Automated Flagging**
+3. **Automated Flagging & Recommendation**
+   - Every game shows a **bet recommendation** with a signal tier:
+     - 🚨 **EXTREME EDGE** (>11 pts) — verify no late scratches
+     - 🔥 **STRONG SIGNAL** (edge ≥ 5, HIGH confidence) — highest conviction
+     - 📊 **LEAN** (edge ≥ 3) — moderate edge, worth considering
+     - 📉 **LOW EDGE** (<3 pts) — thin margin, proceed with caution
    - If late-breaking lineup/injury news is detected, the UI will alert you to double-check before betting.
-   - Only games with edge ≥ 5 and HIGH confidence are recommended as “STRONG SIGNAL” bets.
 
 4. **Logging and Tracking**
    - Each analysis is logged to a date-stamped CSV (`bet_tracker_YYYY-MM-DD.csv`) for post-mortem review.

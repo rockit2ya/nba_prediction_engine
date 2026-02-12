@@ -23,10 +23,11 @@ The interactive UI will:
 3. ✅ Calculate fair lines from team efficiency, injuries, rest, and pace
 4. ✅ Compare against the market line you enter
 5. ✅ Show edge, Kelly sizing, and confidence level
-6. ✅ Prompt for **Pick** (accept recommendation or override), **Bet Type** (Spread/ML/O-U), **Sportsbook**, **Odds**, and **Bet amount**
-7. ✅ Auto-calculate **ToWin** from your odds and stake
-8. ✅ Auto-record **Timestamp** and **Confidence** grade
-9. ✅ Log everything to `bet_tracker_YYYY-MM-DD.csv`
+6. ✅ Display a **bet recommendation** with signal tier (🔥 Strong / 📊 Lean / 📉 Low Edge / 🚨 Extreme)
+7. ✅ Prompt for **Pick** (accept recommendation or override), **Bet Type** (Spread/ML/O-U), **Sportsbook**, **Odds**, and **Bet amount**
+8. ✅ Auto-calculate **ToWin** from your odds and stake
+9. ✅ Auto-record **Timestamp** and **Confidence** grade
+10. ✅ Log everything to `bet_tracker_YYYY-MM-DD.csv`
 
 ### 3. After Games — Update Results
 
