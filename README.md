@@ -37,6 +37,7 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 | `game_schedule.csv`              | Local schedule data for rest/fatigue calculations.                                                                                                                                     |
 | `bet_tracker_YYYY-MM-DD.csv`     | Daily log of all bets with timestamp, fair lines, edges, Kelly calculations, confidence grade, bet type, sportsbook, odds, and real-dollar tracking (including auto-calculated ToWin). |
 | `requirements.txt`               | Python dependencies for the project.                                                                                                                                                   |
+| `text_to_image.py`               | Renders terminal text output as a full-length PNG screenshot with color-coded lines. Usage: `python text_to_image.py <input.txt> [output.png]`                                        |
 | `BETTING_GUIDE.md`               | Guide to using the engine for betting, including manual steps and best practices.                                                                                                      |
 | `README.md`                      | This file.                                                                                                                                                                             |
 
@@ -212,6 +213,11 @@ These scripts provide additional analysis, data checks, and manual overrides for
 - **nba_lineup_and_news_monitor.py**
   - Scrape ESPN for lineups/injuries and fetch NBA news headlines via RSS. Useful for monitoring late scratches and breaking news.
   - Usage: `python nba_lineup_and_news_monitor.py`
+
+- **text_to_image.py**
+  - Render terminal output as a full-length PNG screenshot with a dark background and color-coded lines (green for wins, red for losses, yellow for verdicts). Useful for sharing dashboards and session results.
+  - Usage: `python text_to_image.py <input.txt> [output.png]`
+  - Tip: Use the VS Code **Terminal Capture** extension to save terminal output to a text file first.
 
 These tools are optional but recommended for power users who want deeper insight, custom data, or extra validation before betting.
 

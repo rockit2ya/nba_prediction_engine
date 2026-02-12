@@ -29,5 +29,9 @@ bankroll.json
 # Rendered HTML artifacts
 rendered_*.html
 
+# Terminal capture temp files
+terminal_*.txt
+terminal_*.png
+
 # Misc
 .stats_timestamp

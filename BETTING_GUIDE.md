@@ -168,6 +168,7 @@ This monitors ESPN and NBA.com headlines for injury/scratch alerts.
 | `nba_stats_cache.json`       | Team efficiency ratings | Auto-fetched each run     |
 | `bet_tracker_YYYY-MM-DD.csv` | Bets + results + real $ | Daily                     |
 | `bankroll.json`              | Bankroll config         | Set once, auto-maintained |
+| `text_to_image.py`           | Terminal → PNG screenshot | On demand                 |
 
 ---
 
