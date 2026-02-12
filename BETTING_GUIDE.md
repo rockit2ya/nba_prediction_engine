@@ -161,13 +161,13 @@ This monitors ESPN and NBA.com headlines for injury/scratch alerts.
 
 ## 📝 Key Files
 
-| File                         | Purpose                 | Update Frequency          |
-| ---------------------------- | ----------------------- | ------------------------- |
-| `nba_injuries.csv`           | Player injury status    | Auto-scraped each run     |
-| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties  | Auto-scraped each run     |
-| `nba_stats_cache.json`       | Team efficiency ratings | Auto-fetched each run     |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + real $ | Daily                     |
-| `bankroll.json`              | Bankroll config         | Set once, auto-maintained |
+| File                         | Purpose                   | Update Frequency          |
+| ---------------------------- | ------------------------- | ------------------------- |
+| `nba_injuries.csv`           | Player injury status      | Auto-scraped each run     |
+| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties    | Auto-scraped each run     |
+| `nba_stats_cache.json`       | Team efficiency ratings   | Auto-fetched each run     |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + real $   | Daily                     |
+| `bankroll.json`              | Bankroll config           | Set once, auto-maintained |
 | `text_to_image.py`           | Terminal → PNG screenshot | On demand                 |
 
 ---

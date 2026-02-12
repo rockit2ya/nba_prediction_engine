@@ -37,7 +37,7 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 | `game_schedule.csv`              | Local schedule data for rest/fatigue calculations.                                                                                                                                     |
 | `bet_tracker_YYYY-MM-DD.csv`     | Daily log of all bets with timestamp, fair lines, edges, Kelly calculations, confidence grade, bet type, sportsbook, odds, and real-dollar tracking (including auto-calculated ToWin). |
 | `requirements.txt`               | Python dependencies for the project.                                                                                                                                                   |
-| `text_to_image.py`               | Renders terminal text output as a full-length PNG screenshot with color-coded lines. Usage: `python text_to_image.py <input.txt> [output.png]`                                        |
+| `text_to_image.py`               | Renders terminal text output as a full-length PNG screenshot with color-coded lines. Usage: `python text_to_image.py <input.txt> [output.png]`                                         |
 | `BETTING_GUIDE.md`               | Guide to using the engine for betting, including manual steps and best practices.                                                                                                      |
 | `README.md`                      | This file.                                                                                                                                                                             |
 
