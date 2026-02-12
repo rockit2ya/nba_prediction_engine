@@ -322,35 +322,54 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     q_players = [p['name'] for p in (injuries.get(h_row['TEAM_NAME'], []) + injuries.get(a_row['TEAM_NAME'], [])) if 'questionable' in p['status']]
     return round(fair_line, 2), q_players, news, flag
 
-def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, book='', odds='', bet_amount=''):
-    filename = f"bet_tracker_{datetime.now().strftime('%Y-%m-%d')}.csv"
+def _calc_to_win(odds, bet_amount):
+    """Calculate potential payout (To Win) from American odds and stake."""
+    try:
+        odds = float(odds)
+        bet_amount = float(bet_amount)
+    except (ValueError, TypeError):
+        return ''
+    if odds > 0:
+        return round(bet_amount * (odds / 100), 2)
+    elif odds < 0:
+        return round(bet_amount * (100 / abs(odds)), 2)
+    return ''
+
+def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, confidence='', bet_type='Spread', book='', odds='', bet_amount=''):
+    now = datetime.now()
+    filename = f"bet_tracker_{now.strftime('%Y-%m-%d')}.csv"
+    timestamp = now.strftime('%Y-%m-%d %H:%M:%S')
     notes = input("Enter any manual notes/context for this bet (press Enter to skip): ")
+    to_win = _calc_to_win(odds, bet_amount)
     import csv
     import os
     rows = []
-    header = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Book','Odds','Bet','Result','Payout','Notes']
-    old_header = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
+    header = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
+    prev_header_14 = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Book','Odds','Bet','Result','Payout','Notes']
+    old_header_10 = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
     # Read existing rows if file exists
     if os.path.isfile(filename):
         with open(filename, 'r', newline='') as f:
             reader = csv.reader(f)
             rows = list(reader)
-        # Remove header if present (support old and new format)
-        if rows and (rows[0] == header or rows[0] == old_header):
+        # Remove header if present (support old formats)
+        if rows and rows[0] in (header, prev_header_14, old_header_10):
             rows = rows[1:]
-    # Migrate old 10-column rows to 14-column format
+    # Migrate old rows to 18-column format
     migrated_rows = []
     for row in rows:
         if len(row) == 10:
-            # Old: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Result,Notes]
-            # New: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Book,Odds,Bet,Result,Payout,Notes]
-            migrated_rows.append(row[:8] + ['', '', ''] + [row[8]] + [''] + [row[9] if len(row) > 9 else ''])
+            # Old 10-col: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Result,Notes]
+            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[6], '', row[7], 'Spread', '', '', '', '', row[8], '', row[9] if len(row) > 9 else ''])
+        elif len(row) == 14:
+            # Prev 14-col: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Book,Odds,Bet,Result,Payout,Notes]
+            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[6], '', row[7], 'Spread', row[8], row[9], row[10], _calc_to_win(row[9], row[10]), row[11], row[12], row[13]])
         else:
             migrated_rows.append(row)
     rows = migrated_rows
     # Remove any existing entry for this game (ID, Away, Home)
-    new_row = [gid, away, home, f_line, m_line, edge, f"{kelly}%", rec, book, odds, bet_amount, 'PENDING', '', notes]
-    rows = [row for row in rows if not (len(row) >= 3 and row[0] == gid and row[1] == away and row[2] == home)]
+    new_row = [gid, timestamp, away, home, f_line, m_line, edge, f"{kelly}%", confidence, rec, bet_type, book, odds, bet_amount, to_win, 'PENDING', '', notes]
+    rows = [row for row in rows if not (len(row) >= 4 and row[0] == gid and row[2] == away and row[3] == home)]
     rows.append(new_row)
     # Write back with header
     with open(filename, 'w', newline='') as f:

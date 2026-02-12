@@ -131,6 +131,10 @@ def run_ui():
 
                     # Optional: collect bet details
                     print("\n  📝 Log bet details (press Enter to skip any):")
+                    pick_in = input(f"     Betting on [{recommendation}] or override (type team name): ").strip()
+                    pick = pick_in if pick_in else recommendation
+                    bet_type = input("     Bet type (S=Spread, M=Moneyline, O=Over/Under) [S]: ").strip().upper()
+                    bet_type = {'S': 'Spread', 'M': 'Moneyline', 'O': 'Over/Under'}.get(bet_type, 'Spread')
                     book = input("     Sportsbook (e.g., DraftKings, FanDuel): ").strip()
                     odds_in = input("     Odds (e.g., -110): ").strip()
                     bet_in = input("     Bet amount in $ (e.g., 50): ").strip()
@@ -139,7 +143,7 @@ def run_ui():
                     bet_val = bet_in if bet_in else ''
 
                     # Log to date-stamped CSV
-                    log_bet(gid, away, home, fair_line, market, edge, recommendation, kelly, book, odds_val, bet_val)
+                    log_bet(gid, away, home, fair_line, market, edge, pick, kelly, conf, bet_type, book, odds_val, bet_val)
 
                     print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
 

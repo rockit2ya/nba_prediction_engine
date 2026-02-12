@@ -392,6 +392,43 @@ def lifetime_dashboard():
                         bwr = bw / len(grp) if len(grp) > 0 else 0
                         print(f"  {book_name:<18} {len(grp):<6} {bw}W-{bl}L{'':<4} ${bpl:>+9,.2f}  {bwr:.0%}")
 
+    # ── Confidence Breakdown ──
+    if 'Confidence' in completed.columns:
+        conf_col = completed['Confidence'].astype(str).str.strip().str.upper()
+        conf_vals = conf_col[~conf_col.isin(['', 'NAN'])]
+        if not conf_vals.empty:
+            section("Confidence Breakdown")
+            print(f"  {'Grade':<28} {'Bets':<6} {'Record':<10} {'Win Rate':<10} {'P/L'}")
+            print(f"  {'─'*28} {'─'*6} {'─'*10} {'─'*10} {'─'*10}")
+            for conf_label in ['HIGH', 'MEDIUM', 'LOW']:
+                mask = conf_col.str.contains(conf_label, na=False)
+                grp = completed[mask]
+                if grp.empty:
+                    continue
+                cw = (grp['Result'] == 'WIN').sum()
+                cl = (grp['Result'] == 'LOSS').sum()
+                cd = cw + cl
+                cr = cw / cd if cd > 0 else 0
+                cu = grp.apply(calc_units, axis=1).sum()
+                print(f"  {conf_label:<28} {len(grp):<6} {cw}W-{cl}L{'':<4} {cr:.1%}{'':<5} {cu:+.1f}")
+
+    # ── Bet Type Breakdown ──
+    if 'Type' in completed.columns:
+        type_col = completed['Type'].astype(str).str.strip()
+        type_vals = type_col[~type_col.isin(['', 'nan'])]
+        if not type_vals.empty and type_vals.nunique() > 1:
+            section("Bet Type Breakdown")
+            print(f"  {'Type':<16} {'Bets':<6} {'Record':<10} {'Win Rate':<10} {'P/L'}")
+            print(f"  {'─'*16} {'─'*6} {'─'*10} {'─'*10} {'─'*10}")
+            for bt in sorted(type_vals.unique()):
+                grp = completed[type_col == bt]
+                tw_ = (grp['Result'] == 'WIN').sum()
+                tl_ = (grp['Result'] == 'LOSS').sum()
+                td_ = tw_ + tl_
+                tr_ = tw_ / td_ if td_ > 0 else 0
+                tu_ = grp.apply(calc_units, axis=1).sum()
+                print(f"  {bt:<16} {len(grp):<6} {tw_}W-{tl_}L{'':<4} {tr_:.1%}{'':<5} {tu_:+.1f}")
+
     # ── High-Signal Only ──
     high = filter_high_signal(completed)
     if not high.empty:

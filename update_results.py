@@ -232,9 +232,9 @@ def update_tracker(filepath):
     df = pd.read_csv(filepath)
 
     # Ensure string columns don't get inferred as float64
-    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout']:
+    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout', 'Timestamp', 'Confidence', 'Type', 'ToWin']:
         if col in df.columns:
-            df[col] = df[col].astype(str).replace('nan', '')
+            df[col] = df[col].fillna('').astype(str)
 
     # Check how many are pending
     pending_mask = df['Result'].str.upper().str.strip() == 'PENDING'

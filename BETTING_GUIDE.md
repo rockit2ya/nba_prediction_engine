@@ -23,8 +23,10 @@ The interactive UI will:
 3. ✅ Calculate fair lines from team efficiency, injuries, rest, and pace
 4. ✅ Compare against the market line you enter
 5. ✅ Show edge, Kelly sizing, and confidence level
-6. ✅ Prompt for **Sportsbook**, **Odds**, and **Bet amount** (all optional)
-7. ✅ Log everything to `bet_tracker_YYYY-MM-DD.csv`
+6. ✅ Prompt for **Pick** (accept recommendation or override), **Bet Type** (Spread/ML/O-U), **Sportsbook**, **Odds**, and **Bet amount**
+7. ✅ Auto-calculate **ToWin** from your odds and stake
+8. ✅ Auto-record **Timestamp** and **Confidence** grade
+9. ✅ Log everything to `bet_tracker_YYYY-MM-DD.csv`
 
 ### 3. After Games — Update Results
 
@@ -77,13 +79,15 @@ Rest penalty data is auto-scraped by `rest_penalty_scraper.py` and cached to `nb
 
 When logging a bet in the engine UI, you'll be prompted for:
 
-| Field      | Example      | Notes                          |
-| ---------- | ------------ | ------------------------------ |
-| Sportsbook | `DraftKings` | Optional — press Enter to skip |
-| Odds       | `-110`       | American odds — optional       |
-| Bet amount | `50`         | Dollar amount — optional       |
+| Field      | Example      | Notes                                               |
+| ---------- | ------------ | --------------------------------------------------- |
+| Pick       | `Bucks`      | Defaults to engine recommendation; type to override |
+| Bet Type   | `S`          | S=Spread (default), M=Moneyline, O=Over/Under       |
+| Sportsbook | `DraftKings` | Optional — press Enter to skip                      |
+| Odds       | `-110`       | American odds — optional                            |
+| Bet amount | `50`         | Dollar amount — optional                            |
 
-These are saved in the bet tracker CSV. When `update_results.py` populates WIN/LOSS, it auto-calculates the **Payout** column:
+These are saved in the bet tracker CSV along with auto-recorded **Timestamp**, **Confidence** grade, and **ToWin** (calculated from odds × stake). When `update_results.py` populates WIN/LOSS, it auto-calculates the **Payout** column:
 
 - **WIN at -110**: Bet $50 → Payout +$45.45 (profit)
 - **LOSS**: Bet $50 → Payout -$50.00
@@ -189,7 +193,7 @@ This system factors in:
 3. **Update injuries before each session** — run `fetch_all_nba_data.sh`
 4. **Watch warm-ups** — subtle signs of player issues appear during shootaround
 5. **Monitor line movements** — if line moves 1+ point, something changed
-6. **Track everything** — enter Book, Odds, and Bet for real-dollar accountability
+6. **Track everything** — enter Book, Odds, and Bet for real-dollar accountability (ToWin is auto-calculated)
 7. **Review post-mortem weekly** — check if model edge is holding up
 
 ---
