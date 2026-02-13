@@ -101,13 +101,14 @@ def run_ui():
 
 
                     # Pro Logic: Injury Star Tax + Fatigue + HCA + late-breaking flag
-                    fair_line, q_players, news, flag = predict_nba_spread(away, home)
+                    fair_line, q_players, news, flag, star_tax_failed = predict_nba_spread(away, home)
                     edge = round(abs(fair_line - market), 2)
                     kelly = calculate_kelly(market, fair_line)
 
                     # Confidence Grade Logic
                     conf = "HIGH"
-                    if len(q_players) >= 2: conf = "LOW (High Injury Volatility)"
+                    if star_tax_failed: conf = "MEDIUM (Star Tax API failed — injury impact unknown)"
+                    elif len(q_players) >= 2: conf = "LOW (High Injury Volatility)"
                     elif len(q_players) == 1: conf = "MEDIUM"
 
                     print("\n" + "•"*45)
@@ -122,6 +123,9 @@ def run_ui():
                         print(f"⚠️  GTD/QUESTIONABLE: {', '.join(q_players)}")
                     if flag:
                         print(f"🚨 ALERT: Late-breaking lineup/injury news detected! Double-check before betting.")
+                    if star_tax_failed:
+                        print(f"⚠️  STAR TAX WARNING: Could not fetch player On/Off data. Injury impact NOT reflected in line.")
+                        print(f"   → Manually verify key player statuses before placing this bet.")
 
                     recommendation = home if fair_line < market else away
                     if edge > 11:

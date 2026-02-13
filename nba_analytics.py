@@ -185,8 +185,9 @@ def get_star_tax_weighted(team_id, out_players):
                 p_impact = on_off[on_off['PLAYER_ID'] == p_id]['ON_COURT_PLUS_MINUS'].values
                 if len(p_impact) > 0: total_tax += (p_impact[0] * weight)
         return round(total_tax / 2, 2)
-    except Exception:
-        return 0
+    except Exception as e:
+        print(f"[⚠️  STAR TAX] API timeout for team {team_id} — injury impact NOT factored. ({e})")
+        return None  # Distinguish failure from 0 impact
 
 def get_rest_penalty(team_id):
     """Determines if a team is on a B2B."""
@@ -292,8 +293,14 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
             flag = True
 
     # Calculate Bayesian Star Tax
-    h_tax = get_star_tax_weighted(h_row['TEAM_ID'], injuries.get(h_row['TEAM_NAME'], []))
-    a_tax = get_star_tax_weighted(a_row['TEAM_ID'], injuries.get(a_row['TEAM_NAME'], []))
+    h_tax_raw = get_star_tax_weighted(h_row['TEAM_ID'], injuries.get(h_row['TEAM_NAME'], []))
+    a_tax_raw = get_star_tax_weighted(a_row['TEAM_ID'], injuries.get(a_row['TEAM_NAME'], []))
+    # Track if star tax API failed (None = failure, 0 = no impact)
+    star_tax_failed = h_tax_raw is None or a_tax_raw is None
+    if star_tax_failed:
+        flag = True  # Flag for user to double-check injuries
+    h_tax = h_tax_raw if h_tax_raw is not None else 0
+    a_tax = a_tax_raw if a_tax_raw is not None else 0
     # News factor: late scratches and coaching changes (scoped to THIS matchup only)
     news_factor = 0
     matchup_keywords = set()
@@ -315,12 +322,21 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
             news_factor -= 1
     # Core Math
     rest_adj = h_rest - a_rest
-    hca = 3.0 + ((h_row['NET_RATING'] - a_row['NET_RATING']) / 20)
-    raw_diff = (h_row['OFF_RATING'] - a_row['DEF_RATING']) - (a_row['OFF_RATING'] - h_row['DEF_RATING'])
+    # FIX 1: Flat HCA — NET_RATING is already captured in raw_diff, don't double-count
+    hca = 3.0
+    # FIX 2: Regression to the mean — blend team ratings toward league average
+    # This reflects uncertainty and matches how Vegas prices lines
+    REGRESS_FACTOR = 0.75  # 75% team, 25% league baseline
+    h_off = (h_row['OFF_RATING'] * REGRESS_FACTOR) + (LEAGUE_BASELINE['OFF_RATING'] * (1 - REGRESS_FACTOR))
+    h_def = (h_row['DEF_RATING'] * REGRESS_FACTOR) + (LEAGUE_BASELINE['DEF_RATING'] * (1 - REGRESS_FACTOR))
+    a_off = (a_row['OFF_RATING'] * REGRESS_FACTOR) + (LEAGUE_BASELINE['OFF_RATING'] * (1 - REGRESS_FACTOR))
+    a_def = (a_row['DEF_RATING'] * REGRESS_FACTOR) + (LEAGUE_BASELINE['DEF_RATING'] * (1 - REGRESS_FACTOR))
+    raw_diff = (h_off - a_def) - (a_off - h_def)
     expected_pace = (h_row['PACE'] + a_row['PACE']) / 2
     fair_line = (raw_diff * (expected_pace / 100)) + hca + rest_adj - h_tax + a_tax + news_factor
     q_players = [p['name'] for p in (injuries.get(h_row['TEAM_NAME'], []) + injuries.get(a_row['TEAM_NAME'], [])) if 'questionable' in p['status']]
-    return round(fair_line, 2), q_players, news, flag
+    # FIX 3: Return star_tax_failed so UI can warn the user
+    return round(fair_line, 2), q_players, news, flag, star_tax_failed
 
 def _calc_to_win(odds, bet_amount):
     """Calculate potential payout (To Win) from American odds and stake."""
