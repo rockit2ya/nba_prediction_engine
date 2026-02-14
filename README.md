@@ -361,3 +361,36 @@ When you see an edge over 10 points, **don't just bet the "Recommended Side" imm
 3. **The "Trap Line" Rule:** If your engine says the Knicks should be favored by 9, but Vegas has them as +3.5, ask yourself: _"What does Vegas know that my 10-game rolling average doesn't?"_ (Usually, it's a specific player matchup or a "revenge game" narrative).
 
 ---
+
+## 🗺️ Roadmap
+
+Planned improvements to sharpen the model's accuracy and close gaps with market pricing.
+
+### 1. Enhanced Star Tax — Usage-Weighted Injury Impact
+
+**Status:** Planned
+
+The current Star Tax uses on/off court plus-minus to estimate the impact of missing players. This undersells the effect of losing high-usage stars whose offensive burden can't easily be redistributed.
+
+**Upgrade:** Weight the Star Tax by each player's **usage rate** and **minutes share**, not just on/off +/-. A 30% usage player being out has an outsized effect on the offense compared to a 15% usage player, even if their raw +/- is similar. This better reflects how the remaining roster absorbs the lost production.
+
+**Expected impact:** More accurate injury adjustments for star-dependent teams (e.g., Luka/Mavs, Jokic/Nuggets), reducing false edges caused by the model undervaluing star absences.
+
+### 2. Archetype Mismatch Flag — Targeted Defensive Adjustment
+
+**Status:** Planned
+
+Team-level defensive ratings capture overall defensive quality but miss **positional mismatches** caused by injuries. When a team loses its primary perimeter defender and faces a top-tier wing offense, the team DEF_RATING doesn't reflect the specific vulnerability.
+
+**Upgrade:** Add a simple "archetype mismatch" flag that applies a **1–2 point adjustment** when:
+
+- A team is missing its primary wing/perimeter defender (identified via defensive minutes and matchup data)
+- The opposing team has a top-5 wing-heavy offense (high usage from wing players)
+
+This is the one area where individual defensive performance actually matters and isn't already captured in team-level ratings.
+
+**Expected impact:** Catches 2–4 additional edges per week that the current model misses, particularly in playoff-intensity matchups where defensive assignments are more targeted.
+
+### Design Principle
+
+> **Don't bolt on raw individual stats.** Team-level ratings + Star Tax already encode most individual signal. Adding full box-score stats (PPG, RPG, APG) would double-count what's in the team numbers. Player-vs-player matchup data has tiny sample sizes and adds noise. The right approach is to **refine the existing adjustments** (Star Tax, injury impact) rather than adding a new layer of individual performance data.
