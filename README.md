@@ -191,6 +191,15 @@ You'll see a menu with five options:
 - **Confidence breakdown** — win rate by HIGH/MEDIUM/LOW grade (or note if data unavailable)
 - High-signal bet performance
 - **📈 CLV Summary** — average Closing Line Value, positive CLV rate, CLV by wins/losses (or setup guide if no odds cached)
+
+> **What is CLV?** Closing Line Value measures whether you got a better number than the final market line at tip-off. Sportsbooks don't provide this — you calculate it yourself:
+>
+> 1. Record the line when you place your bet (your **Market Line**)
+> 2. The engine caches the consensus closing line from 15+ sportsbooks right before tip-off
+> 3. **CLV = Closing Line − Your Market Line** (positive = you beat the market)
+>
+> Why it matters: research shows that bettors who consistently beat the closing line are profitable long-term, regardless of short-term variance. CLV is the single best predictor of real edge vs. just running hot.
+
 - Edge calibration (do bigger edges win more often?)
 - Streaks, max drawdown, and current balance
 - Daily trend table (with dollar P/L column when available)
