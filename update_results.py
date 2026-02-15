@@ -17,12 +17,17 @@ from datetime import datetime
 from nba_api.stats.endpoints import scoreboardv2
 from nba_api.stats.static import teams as nba_teams
 import time
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
 try:
     from odds_api import get_closing_line
     HAS_ODDS_API = True
 except ImportError:
     HAS_ODDS_API = False
+
+API_KEY = os.getenv('ODDS_API_KEY', '')
 
 # ─── Team Name Mapping ───────────────────────────────────────────────────────
 # Build a lookup: nickname (e.g., "Mavericks") -> full team info
@@ -339,6 +344,23 @@ def main():
     print("\n" + "=" * 60)
     print("  📊 NBA Bet Tracker — Result Updater")
     print("=" * 60)
+
+    # ── CLV status alert ──
+    if not HAS_ODDS_API:
+        print("\n  ⚠️  CLV tracking unavailable — odds_api module not found.")
+        print("     Install python-dotenv and ensure odds_api.py is present.")
+    elif not API_KEY:
+        print("\n  ⚠️  CLV tracking unavailable — no ODDS_API_KEY in .env file.")
+        print("     Run: cp .env.example .env  and add your key from the-odds-api.com")
+    else:
+        from odds_api import load_cache
+        cache = load_cache()
+        cached_count = len(cache.get('games', {}))
+        if cached_count == 0:
+            print("\n  ⚠️  No cached odds found — CLV columns will be blank.")
+            print("     Run: bash fetch_all_nba_data.sh (before tip-off) to cache odds.")
+        else:
+            print(f"\n  ✅ CLV tracking active — {cached_count} game(s) in odds cache.")
 
     files = find_bet_tracker_files()
     if not files:
