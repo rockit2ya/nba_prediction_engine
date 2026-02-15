@@ -889,6 +889,31 @@ def bankroll_tracker():
     print(f"  Starting Bankroll:  ${starting:,.2f}")
     print(f"  Unit Size:          ${unit_size:,.2f}")
     print(f"  Tracking Since:     {bankroll_data.get('created', dates[0])}")
+    print(f"\n  [R] Reset Bankroll   [Enter] Continue\n")
+
+    choice = input("  ").strip().upper()
+    if choice == 'R':
+        print()
+        try:
+            new_start = float(input(f"  New starting bankroll (current: ${starting:,.2f}): $").strip().replace('$', '').replace(',', ''))
+        except (ValueError, EOFError):
+            print("  ❌ Invalid amount. Keeping current settings.")
+            return
+        try:
+            new_unit_str = input(f"  New unit size (current: ${unit_size:,.2f}, default = bankroll/100): $").strip().replace('$', '').replace(',', '')
+            new_unit = float(new_unit_str) if new_unit_str else round(new_start / 100, 2)
+        except (ValueError, EOFError):
+            new_unit = round(new_start / 100, 2)
+
+        bankroll_data = {
+            "starting_bankroll": new_start,
+            "unit_size": new_unit,
+            "created": datetime.now().strftime('%Y-%m-%d')
+        }
+        save_bankroll(bankroll_data)
+        starting = new_start
+        unit_size = new_unit
+        print(f"\n  ✅ Bankroll reset: ${starting:,.2f} | Unit size: ${unit_size:,.2f}\n")
 
     # Day-by-day bankroll
     section("Daily Bankroll")
