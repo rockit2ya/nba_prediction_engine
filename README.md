@@ -262,12 +262,32 @@ pip install -r requirements.txt
 
 ```
 
-### **Step 4: Select the Python Interpreter**
+### **Step 4: Fetch NBA Data & Set Up API Keys**
+
+Run the data fetcher to populate all caches (stats, injuries, news, odds):
+
+```bash
+bash fetch_all_nba_data.sh
+```
+
+**Optional — Enable CLV Tracking:**
+
+1. Sign up for a free API key at [the-odds-api.com](https://the-odds-api.com).
+2. Copy the template and add your key:
+
+```bash
+cp .env.example .env
+# Edit .env and replace "your_api_key_here" with your real key
+```
+
+The engine works without this — CLV columns will simply be left blank.
+
+### **Step 5: Select the Python Interpreter**
 
 1. Press `Cmd + Shift + P` and type **"Python: Select Interpreter"**.
 2. Choose the one that starts with `./.venv/bin/python`. This ensures VS Code uses the libraries you just installed.
 
-### **Step 5: Run the Engine**
+### **Step 6: Run the Engine**
 
 1. Open `nba_engine_ui.py` in the editor.
 2. Click the **"Play"** button in the top-right corner, or type this in the terminal:
@@ -289,6 +309,8 @@ python nba_engine_ui.py
 - **Slow Data:** The first run creates the cache. Subsequent runs will be nearly instant.
 - **Connection Error:** If the NBA blocks your Wi-Fi, toggle your iPhone's **Airplane Mode** for 5 seconds to reset your hotspot's IP address.
 - **Missing Data:** If the CSV isn't updating, ensure you have "Write" permissions for the folder you opened in VS Code.
+- **ChromeDriver Errors:** The advanced stats scraper (`nba_data_fetcher_advanced.py`) uses Selenium and requires Google Chrome. Install Chrome from [google.com/chrome](https://www.google.com/chrome/). ChromeDriver is managed automatically by `webdriver-manager`.
+- **No CLV Data:** If CLV columns are blank, ensure your `.env` file contains a valid `ODDS_API_KEY` and run `bash fetch_all_nba_data.sh` before game tip-off to cache the odds.
 
 ---
 
