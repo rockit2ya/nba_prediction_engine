@@ -178,16 +178,16 @@ CLV measures whether you got a better number than the final market consensus at 
 
 ## 📝 Key Files
 
-| File                         | Purpose                          | Update Frequency          |
-| ---------------------------- | -------------------------------- | ------------------------- |
-| `nba_injuries.csv`           | Player injury status             | Auto-scraped each run     |
-| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties           | Auto-scraped each run     |
-| `nba_stats_cache.json`       | Team efficiency ratings          | Auto-fetched each run     |
-| `odds_cache.json`            | Live spreads for CLV tracking    | Auto-fetched each run     |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + real $    | Daily                     |
-| `bankroll.json`              | Bankroll config                  | Set once, auto-maintained |
-| `.env`                       | API keys (Odds API)              | Set once                  |
-| `text_to_image.py`           | Terminal → PNG screenshot        | On demand                 |
+| File                         | Purpose                       | Update Frequency          |
+| ---------------------------- | ----------------------------- | ------------------------- |
+| `nba_injuries.csv`           | Player injury status          | Auto-scraped each run     |
+| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties        | Auto-scraped each run     |
+| `nba_stats_cache.json`       | Team efficiency ratings       | Auto-fetched each run     |
+| `odds_cache.json`            | Live spreads for CLV tracking | Auto-fetched each run     |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + real $ | Daily                     |
+| `bankroll.json`              | Bankroll config               | Set once, auto-maintained |
+| `.env`                       | API keys (Odds API)           | Set once                  |
+| `text_to_image.py`           | Terminal → PNG screenshot     | On demand                 |
 
 ---
 
