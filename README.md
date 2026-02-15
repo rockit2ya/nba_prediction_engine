@@ -215,7 +215,7 @@ You'll see a menu with five options:
 
 **[4] Daily Trend & Profit Curve** — Day-by-day P/L with cumulative rolling win rate and an ASCII profit curve chart.
 
-**[5] Bankroll Tracker** — Set a starting bankroll and unit size, then track day-by-day balance changes with real dollars. Includes Quarter-Kelly recommended bet sizing based on lifetime win rate.
+**[5] Bankroll Tracker** — Set a starting bankroll and unit size, then track day-by-day balance changes with real dollars. Includes Quarter-Kelly recommended bet sizing based on lifetime win rate. Press `[R]` to reset your bankroll and unit size when you're ready to scale up.
 
 ---
 

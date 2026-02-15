@@ -109,6 +109,8 @@ On first run, you'll set:
 
 The tracker then shows day-by-day balance changes using real bet data (when available) or flat-unit estimates. It also provides **Quarter-Kelly recommended bet sizing** based on your lifetime win rate.
 
+**Ready to scale up?** Press `[R]` in the bankroll tracker to reset your starting bankroll and unit size at any time.
+
 ---
 
 ## ⚠️ Checking for Late Scratches (30 mins before tipoff)
