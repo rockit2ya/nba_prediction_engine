@@ -8,7 +8,7 @@
 ./fetch_all_nba_data.sh
 ```
 
-This runs all scrapers (team stats, injuries, rest penalties, news) and caches the results locally.
+This runs all scrapers (team stats, injuries, rest penalties, news, and live odds) and caches the results locally.
 
 ### 2. Run the Prediction Engine
 
@@ -35,7 +35,7 @@ The interactive UI will:
 python update_results.py
 ```
 
-Auto-fetches final scores from the NBA API and fills in WIN/LOSS/PUSH + Payout.
+Auto-fetches final scores from the NBA API and fills in WIN/LOSS/PUSH + Payout. Also populates **ClosingLine** and **CLV** (Closing Line Value) from cached odds — see CLV section below.
 
 ### 4. Analyze Performance
 
@@ -46,7 +46,7 @@ python post_mortem.py
 Menu-driven analyzer with 5 options:
 
 - **[1] Single-Day Post-Mortem** — win/loss/push breakdown with injury & margin analysis
-- **[2] Lifetime Dashboard** — all-time record, ROI, streaks, pro-level verdict
+- **[2] Lifetime Dashboard** — all-time record, ROI, CLV summary, streaks, 6-point pro-level verdict
 - **[3] Edge Calibration** — do bigger edges win at higher rates?
 - **[4] Daily Trend & Profit Curve** — cumulative P/L with ASCII chart
 - **[5] Bankroll Tracker** — real-dollar bankroll tracking with Kelly sizing
@@ -133,6 +133,23 @@ This monitors ESPN and NBA.com headlines for injury/scratch alerts.
 
 ---
 
+## 📈 Closing Line Value (CLV)
+
+CLV measures whether you got a better number than the final market consensus at tip-off. It's the gold standard for proving real betting edge.
+
+**How it works:**
+
+1. `fetch_all_nba_data.sh` caches live spreads from 15+ sportsbooks (via The Odds API)
+2. You place your bet and the engine records your **Market Line**
+3. After games finish, `update_results.py` compares your line to the cached **Closing Line**
+4. **CLV = Closing Line − Your Market Line** → positive means you beat the market
+
+**Setup:** Copy `.env.example` to `.env` and add your free API key from [the-odds-api.com](https://the-odds-api.com). The engine works without it — CLV columns will simply be blank.
+
+**Why it matters:** Bettors who consistently beat the closing line are profitable long-term, regardless of short-term variance. Sportsbooks don't provide this metric — they use it internally to identify and limit sharp accounts.
+
+---
+
 ## ⚡ Betting Decision Flow
 
 ```
@@ -161,14 +178,16 @@ This monitors ESPN and NBA.com headlines for injury/scratch alerts.
 
 ## 📝 Key Files
 
-| File                         | Purpose                   | Update Frequency          |
-| ---------------------------- | ------------------------- | ------------------------- |
-| `nba_injuries.csv`           | Player injury status      | Auto-scraped each run     |
-| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties    | Auto-scraped each run     |
-| `nba_stats_cache.json`       | Team efficiency ratings   | Auto-fetched each run     |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + real $   | Daily                     |
-| `bankroll.json`              | Bankroll config           | Set once, auto-maintained |
-| `text_to_image.py`           | Terminal → PNG screenshot | On demand                 |
+| File                         | Purpose                          | Update Frequency          |
+| ---------------------------- | -------------------------------- | ------------------------- |
+| `nba_injuries.csv`           | Player injury status             | Auto-scraped each run     |
+| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties           | Auto-scraped each run     |
+| `nba_stats_cache.json`       | Team efficiency ratings          | Auto-fetched each run     |
+| `odds_cache.json`            | Live spreads for CLV tracking    | Auto-fetched each run     |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + real $    | Daily                     |
+| `bankroll.json`              | Bankroll config                  | Set once, auto-maintained |
+| `.env`                       | API keys (Odds API)              | Set once                  |
+| `text_to_image.py`           | Terminal → PNG screenshot        | On demand                 |
 
 ---
 
@@ -182,6 +201,7 @@ This system factors in:
 - ✅ **Player injuries and star impact** ← Most sportsbooks are slow to adjust
 - ✅ **Rest days and B2B penalties** ← Sharp bettors track this
 - ✅ **Late scratch monitoring** ← Key for real-time
+- ✅ **CLV tracking** ← Proves real edge vs. just running hot
 - ✅ **Real-money P/L tracking** ← Know exactly where you stand
 
 **Pro benchmark: >52.4% ATS win rate = profitable at -110 vig.**
@@ -196,7 +216,8 @@ This system factors in:
 4. **Watch warm-ups** — subtle signs of player issues appear during shootaround
 5. **Monitor line movements** — if line moves 1+ point, something changed
 6. **Track everything** — enter Book, Odds, and Bet for real-dollar accountability (ToWin is auto-calculated)
-7. **Review post-mortem weekly** — check if model edge is holding up
+7. **Fetch odds before tip-off** — run `fetch_all_nba_data.sh` close to game time to cache the best closing lines for CLV
+8. **Review post-mortem weekly** — check if model edge and CLV are holding up
 
 ---
 
