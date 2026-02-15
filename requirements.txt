@@ -6,5 +6,6 @@ nba_api==1.11.3
 numpy==2.4.2
 pandas==3.0.0
 python-dateutil==2.9.0.post0
+python-dotenv==1.1.0
 requests==2.32.5
 selenium==4.40.0

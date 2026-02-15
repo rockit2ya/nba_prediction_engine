@@ -5,6 +5,13 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+# Activate virtual environment if present, otherwise use python3
+if [ -f .venv/bin/activate ]; then
+  source .venv/bin/activate
+elif ! command -v python &> /dev/null; then
+  alias python=python3
+fi
+
 LOG=fetch_all_nba_data.log
 > "$LOG"
 
@@ -38,6 +45,14 @@ else
   exit 1
 fi
 
+# Fetch and cache live odds for CLV tracking (non-fatal if no games)
+echo "[INFO] Fetching NBA odds for CLV tracking..." | tee -a "$LOG"
+if python odds_api.py >> "$LOG" 2>&1; then
+  echo "[SUCCESS] NBA odds fetched." | tee -a "$LOG"
+else
+  echo "[WARN] Odds fetch failed (non-fatal — may be no games today)." | tee -a "$LOG"
+fi
+
 # Final check for all caches
 if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache.json ] && [ -s nba_rest_penalty_cache.csv ]; then
   echo "" | tee -a "$LOG"
@@ -47,10 +62,12 @@ if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache
   INJURY_COUNT=$(grep -Eo 'Saved injury data to nba_injuries.csv with [0-9]+ records' "$LOG" | grep -Eo '[0-9]+' | tail -1)
   REST_COUNT=$(grep -Eo 'Cached rest penalty data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1)
   NEWS_COUNT=$(grep -Eo 'Cached [0-9]+ NBA news items' "$LOG" | grep -Eo '[0-9]+' | tail -1)
+  ODDS_COUNT=$(grep -Eo 'Fetched [0-9]+ game' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   echo "  - NBA Team Stats: ${STATS_COUNT:-0} teams" | tee -a "$LOG"
   echo "  - Injuries: ${INJURY_COUNT:-0} records" | tee -a "$LOG"
   echo "  - Rest Penalty: ${REST_COUNT:-0} teams" | tee -a "$LOG"
   echo "  - NBA News: ${NEWS_COUNT:-0} items" | tee -a "$LOG"
+  echo "  - Odds (CLV): ${ODDS_COUNT:-0} games" | tee -a "$LOG"
   echo "" | tee -a "$LOG"
   echo "[COMPLETE] All NBA data cached successfully. Engine is ready for offline operation." | tee -a "$LOG"
 else

@@ -391,6 +391,16 @@ def lifetime_dashboard():
                         bpl = grp['RealPL'].sum()
                         bwr = bw / len(grp) if len(grp) > 0 else 0
                         print(f"  {book_name:<18} {len(grp):<6} {bw}W-{bl}L{'':<4} ${bpl:>+9,.2f}  {bwr:.0%}")
+                else:
+                    print(f"\n  💡 Tip: Enter a sportsbook name when logging bets for per-book P/L breakdown.")
+        else:
+            section("💰 Real Money P/L")
+            print("  ⚠️  No dollar amounts tracked yet.")
+            print("     Enter Odds and Bet amount when logging bets to enable real money tracking.")
+    else:
+        section("💰 Real Money P/L")
+        print("  ⚠️  No dollar amounts tracked yet.")
+        print("     Enter Odds and Bet amount when logging bets to enable real money tracking.")
 
     # ── Confidence Breakdown ──
     if 'Confidence' in completed.columns:
@@ -411,6 +421,12 @@ def lifetime_dashboard():
                 cr = cw / cd if cd > 0 else 0
                 cu = grp.apply(calc_units, axis=1).sum()
                 print(f"  {conf_label:<28} {len(grp):<6} {cw}W-{cl}L{'':<4} {cr:.1%}{'':<5} {cu:+.1f}")
+        else:
+            section("Confidence Breakdown")
+            print("  ⚠️  No confidence data. Star Tax API may have timed out during analysis.")
+    else:
+        section("Confidence Breakdown")
+        print("  ⚠️  No confidence data. Older bet trackers may not include this column.")
 
     # ── Bet Type Breakdown ──
     if 'Type' in completed.columns:
@@ -446,6 +462,51 @@ def lifetime_dashboard():
         print(f"  Grade:           {grade_win_rate(high_rate, len(high))}")
         print(f"  P/L:             {high_units:+.1f} units  (Kelly-sized: {high_kelly:+.2f} units)")
         print(f"  ROI:             {high_roi:+.1f}%")
+
+    # ── CLV (Closing Line Value) ──
+    if 'CLV' in completed.columns:
+        clv_col = pd.to_numeric(completed['CLV'], errors='coerce')
+        clv_valid = completed[clv_col.notna()].copy()
+        clv_valid['CLV_num'] = pd.to_numeric(clv_valid['CLV'], errors='coerce')
+        if not clv_valid.empty:
+            section("📈 Closing Line Value (CLV)")
+            avg_clv = clv_valid['CLV_num'].mean()
+            pos_clv = (clv_valid['CLV_num'] > 0).sum()
+            neg_clv = (clv_valid['CLV_num'] < 0).sum()
+            zero_clv = (clv_valid['CLV_num'] == 0).sum()
+            clv_rate = pos_clv / len(clv_valid) if len(clv_valid) > 0 else 0
+
+            # CLV by result
+            clv_wins = clv_valid[clv_valid['Result'] == 'WIN']['CLV_num']
+            clv_losses = clv_valid[clv_valid['Result'] == 'LOSS']['CLV_num']
+
+            print(f"  Tracked Bets:    {len(clv_valid)} of {len(completed)} completed")
+            print(f"  Average CLV:     {avg_clv:+.2f} pts")
+            print(f"  Positive CLV:    {pos_clv} ({clv_rate:.0%}) — you beat the closing line")
+            print(f"  Negative CLV:    {neg_clv}")
+            if not clv_wins.empty:
+                print(f"  CLV on Wins:     {clv_wins.mean():+.2f} avg")
+            if not clv_losses.empty:
+                print(f"  CLV on Losses:   {clv_losses.mean():+.2f} avg")
+
+            if avg_clv > 0:
+                print(f"\n  ✅ Positive average CLV — model is finding real value before the market adjusts.")
+            elif avg_clv > -0.5:
+                print(f"\n  ⚠️  CLV near zero — model tracks the market but isn't consistently beating it.")
+            else:
+                print(f"\n  🔴 Negative CLV — consider betting earlier or reviewing what moves lines after you bet.")
+        else:
+            section("📈 Closing Line Value (CLV)")
+            print("  ⚠️  No CLV data yet. To enable CLV tracking:")
+            print("     1. Run: bash fetch_all_nba_data.sh (close to tip-off for best results)")
+            print("     2. Run: python update_results.py (after games finish)")
+            print("     CLV columns will auto-populate in your bet tracker CSVs.")
+    else:
+        section("📈 Closing Line Value (CLV)")
+        print("  ⚠️  No CLV data yet. To enable CLV tracking:")
+        print("     1. Run: bash fetch_all_nba_data.sh (close to tip-off for best results)")
+        print("     2. Run: python update_results.py (after games finish)")
+        print("     CLV columns will auto-populate in your bet tracker CSVs.")
 
     # ── Edge Calibration ──
     section("Edge Calibration (do bigger edges win more?)")
@@ -589,6 +650,14 @@ def lifetime_dashboard():
 
     # Check 5: Sample size
     checks.append(("Sufficient Sample (20+ bets)", total >= 20, f"n={total}"))
+
+    # Check 6: CLV (if data available)
+    if 'CLV' in completed.columns:
+        clv_col_v = pd.to_numeric(completed['CLV'], errors='coerce')
+        clv_valid_v = clv_col_v.dropna()
+        if len(clv_valid_v) >= 5:
+            avg_clv_v = clv_valid_v.mean()
+            checks.append(("Positive CLV (beating closing lines)", avg_clv_v > 0, f"{avg_clv_v:+.2f} pts"))
 
     passed = sum(1 for _, ok, _ in checks if ok)
     for label, ok, val in checks:

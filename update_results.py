@@ -18,6 +18,12 @@ from nba_api.stats.endpoints import scoreboardv2
 from nba_api.stats.static import teams as nba_teams
 import time
 
+try:
+    from odds_api import get_closing_line
+    HAS_ODDS_API = True
+except ImportError:
+    HAS_ODDS_API = False
+
 # ─── Team Name Mapping ───────────────────────────────────────────────────────
 # Build a lookup: nickname (e.g., "Mavericks") -> full team info
 ALL_TEAMS = nba_teams.get_teams()
@@ -231,8 +237,14 @@ def update_tracker(filepath):
 
     df = pd.read_csv(filepath)
 
+    # Ensure ClosingLine and CLV columns exist
+    if 'ClosingLine' not in df.columns:
+        df['ClosingLine'] = ''
+    if 'CLV' not in df.columns:
+        df['CLV'] = ''
+
     # Ensure string columns don't get inferred as float64
-    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout', 'Timestamp', 'Confidence', 'Type', 'ToWin']:
+    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout', 'Timestamp', 'Confidence', 'Type', 'ToWin', 'ClosingLine', 'CLV']:
         if col in df.columns:
             df[col] = df[col].fillna('').astype(str)
 
@@ -289,8 +301,31 @@ def update_tracker(filepath):
             if payout is not None:
                 df.at[idx, 'Payout'] = f"{payout:.2f}"
 
+        # ── CLV: Closing Line Value ──
+        if HAS_ODDS_API:
+            away_nick = row['Away'].strip()
+            home_nick = row['Home'].strip()
+            closing = get_closing_line(away_nick, home_nick)
+            if closing is not None:
+                df.at[idx, 'ClosingLine'] = str(closing)
+                try:
+                    market = float(row['Market'])
+                    # CLV = how much better your line was vs closing
+                    # Positive CLV = you got a better number than the market settled on
+                    clv = round(closing - market, 2)
+                    df.at[idx, 'CLV'] = str(clv)
+                except (ValueError, TypeError):
+                    pass
+
         icon = '✅' if result == 'WIN' else ('🟰' if result == 'PUSH' else '❌')
-        print(f"  {icon} {row['ID']}: {row['Away']} @ {row['Home']} → {result}  ({final_score})")
+        clv_str = ''
+        if str(df.at[idx, 'CLV']).strip():
+            try:
+                clv_val = float(df.at[idx, 'CLV'])
+                clv_str = f"  CLV: {clv_val:+.1f}"
+            except (ValueError, TypeError):
+                pass
+        print(f"  {icon} {row['ID']}: {row['Away']} @ {row['Home']} → {result}  ({final_score}){clv_str}")
         updated += 1
 
     # Save updated CSV

@@ -19,6 +19,7 @@ nba_news_cache.json
 nba_injuries.csv
 nba_rest_penalty_cache.csv
 game_schedule.csv
+odds_cache.json
 
 # Bet tracker (local data, regenerated per session)
 bet_tracker_*.csv
@@ -32,6 +33,9 @@ rendered_*.html
 # Terminal capture temp files
 terminal_*.txt
 terminal_*.png
+
+# Environment / secrets
+.env
 
 # Misc
 .stats_timestamp
