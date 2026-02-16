@@ -264,7 +264,7 @@ def print_decomposition(d):
     if d['q_players']:
         warnings.append(f"GTD/Questionable: {', '.join(d['q_players'])}")
     if d['edge'] is not None and d['edge'] > 15:
-        warnings.append(f"Edge > 15 — historically unreliable, verify matchup manually")
+        warnings.append(f"Edge > 15 — likely capped in UI. Verify matchup manually.")
     if warnings:
         print(f"\n  ─── ⚠️  Warnings ───")
         for w in warnings:
@@ -323,7 +323,18 @@ def historical_audit():
 
         try:
             d = decompose_edge(away, home, market)
-            old_edge = float(row['Edge']) if 'Edge' in row and pd.notna(row['Edge']) else None
+            # Use raw edge: prefer Raw_Edge column, else reconstruct from Fair/Market
+            if 'Raw_Edge' in row.index and pd.notna(row.get('Raw_Edge')):
+                try:
+                    old_edge = float(row['Raw_Edge'])
+                except (ValueError, TypeError):
+                    old_edge = float(row['Edge']) if 'Edge' in row and pd.notna(row['Edge']) else None
+            else:
+                # Reconstruct raw edge from Fair and Market to avoid using capped Edge
+                try:
+                    old_edge = round(abs(float(row['Fair']) - float(row['Market'])), 2)
+                except (ValueError, TypeError):
+                    old_edge = float(row['Edge']) if 'Edge' in row and pd.notna(row['Edge']) else None
             result = row['Result']
             results.append({
                 'date': row.get('Date', ''),
@@ -516,10 +527,31 @@ def model_health_check():
         checks.append(("🔴", f"Win rate: {rate:.1f}% (below 50%, model needs work)"))
 
     # Check 3: Edge calibration (do higher edges win more?)
+    # Use raw edges: prefer Raw_Edge column, else reconstruct from Fair/Market
+    def _get_raw_edge(row):
+        if 'Raw_Edge' in row.index:
+            try:
+                val = float(row['Raw_Edge'])
+                if val > 0:
+                    return val
+            except (ValueError, TypeError):
+                pass
+        try:
+            return round(abs(float(row['Fair']) - float(row['Market'])), 2)
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            return float(row['Edge'])
+        except (ValueError, TypeError):
+            return 0.0
+
+    completed_hc = completed.copy()
+    completed_hc['_RawEdge'] = completed_hc.apply(_get_raw_edge, axis=1)
+
     tier_results = []
     for lo, hi in EDGE_TIERS:
         try:
-            tier = completed[(completed['Edge'].astype(float) >= lo) & (completed['Edge'].astype(float) < hi)]
+            tier = completed_hc[(completed_hc['_RawEdge'] >= lo) & (completed_hc['_RawEdge'] < hi)]
             if len(tier) >= 2:
                 t_wins = len(tier[tier['Result'] == 'WIN'])
                 tier_results.append((lo, hi, t_wins / len(tier), len(tier)))
@@ -539,9 +571,9 @@ def model_health_check():
         else:
             checks.append(("🔴", f"Edge calibration: {inversions} inversions — edge signal may be unreliable"))
 
-    # Check 4: High-edge performance
+    # Check 4: High-edge performance (uses raw edges)
     try:
-        high_edge = completed[completed['Edge'].astype(float) >= 15]
+        high_edge = completed_hc[completed_hc['_RawEdge'] >= 15]
         if len(high_edge) >= 3:
             he_wins = len(high_edge[high_edge['Result'] == 'WIN'])
             he_rate = he_wins / len(high_edge) * 100

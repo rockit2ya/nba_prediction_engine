@@ -351,16 +351,19 @@ def _calc_to_win(odds, bet_amount):
         return round(bet_amount * (100 / abs(odds)), 2)
     return ''
 
-def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, confidence='', bet_type='Spread', book='', odds='', bet_amount=''):
+def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, confidence='', bet_type='Spread', book='', odds='', bet_amount='', raw_edge=None, edge_capped=False):
     now = datetime.now()
     filename = f"bet_tracker_{now.strftime('%Y-%m-%d')}.csv"
     timestamp = now.strftime('%Y-%m-%d %H:%M:%S')
     notes = input("Enter any manual notes/context for this bet (press Enter to skip): ")
     to_win = _calc_to_win(odds, bet_amount)
+    if raw_edge is None:
+        raw_edge = edge  # backward compat: if not supplied, raw == capped
     import csv
     import os
     rows = []
-    header = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
+    header = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Raw_Edge','Edge_Capped','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
+    prev_header_18 = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
     prev_header_14 = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Book','Odds','Bet','Result','Payout','Notes']
     old_header_10 = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
     # Read existing rows if file exists
@@ -369,22 +372,26 @@ def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, confidence='', be
             reader = csv.reader(f)
             rows = list(reader)
         # Remove header if present (support old formats)
-        if rows and rows[0] in (header, prev_header_14, old_header_10):
+        if rows and rows[0] in (header, prev_header_18, prev_header_14, old_header_10):
             rows = rows[1:]
-    # Migrate old rows to 18-column format
+    # Migrate old rows to 20-column format
     migrated_rows = []
     for row in rows:
         if len(row) == 10:
             # Old 10-col: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Result,Notes]
-            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[6], '', row[7], 'Spread', '', '', '', '', row[8], '', row[9] if len(row) > 9 else ''])
+            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[5], 'NO', row[6], '', row[7], 'Spread', '', '', '', '', row[8], '', row[9] if len(row) > 9 else ''])
         elif len(row) == 14:
             # Prev 14-col: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Book,Odds,Bet,Result,Payout,Notes]
-            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[6], '', row[7], 'Spread', row[8], row[9], row[10], _calc_to_win(row[9], row[10]), row[11], row[12], row[13]])
+            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[5], 'NO', row[6], '', row[7], 'Spread', row[8], row[9], row[10], _calc_to_win(row[9], row[10]), row[11], row[12], row[13]])
+        elif len(row) == 18:
+            # Prev 18-col: insert Raw_Edge=Edge, Edge_Capped=NO after Edge column (index 6)
+            migrated_rows.append(row[:7] + [row[6], 'NO'] + row[7:])
         else:
             migrated_rows.append(row)
     rows = migrated_rows
     # Remove any existing entry for this game (ID, Away, Home)
-    new_row = [gid, timestamp, away, home, f_line, m_line, edge, f"{kelly}%", confidence, rec, bet_type, book, odds, bet_amount, to_win, 'PENDING', '', notes]
+    capped_str = 'YES' if edge_capped else 'NO'
+    new_row = [gid, timestamp, away, home, f_line, m_line, edge, raw_edge, capped_str, f"{kelly}%", confidence, rec, bet_type, book, odds, bet_amount, to_win, 'PENDING', '', notes]
     rows = [row for row in rows if not (len(row) >= 4 and row[0] == gid and row[2] == away and row[3] == home)]
     rows.append(new_row)
     # Write back with header

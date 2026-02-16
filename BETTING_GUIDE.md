@@ -112,6 +112,16 @@ The tracker then shows day-by-day balance changes using real bet data (when avai
 
 **Ready to scale up?** Press `[R]` in the bankroll tracker to reset your starting bankroll, unit size, and edge cap at any time.
 
+### Edge Cap Audit
+
+The Lifetime Dashboard (`post_mortem.py` → [2]) includes an **Edge Cap Audit** that compares capped vs. uncapped bet performance:
+
+- **Capped vs. uncapped win rates** — are flagged bets dragging down your record?
+- **Raw edge distribution** — how extreme are the capped edges?
+- **Recommendation** — after 5+ decided capped bets, the system suggests whether to keep, raise, or lower the cap
+
+The CSV stores both `Raw_Edge` (uncapped) and `Edge_Capped` (YES/NO). Historical bets without these columns are reconstructed from `abs(Fair - Market)`.
+
 ---
 
 ## ⚠️ Checking for Late Scratches (30 mins before tipoff)

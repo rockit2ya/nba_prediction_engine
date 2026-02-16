@@ -400,6 +400,17 @@ When you see an edge above your cap (default: 10 pts), the engine caps the displ
 2. **Verify the Scraper:** Since the scraper pulls from CBS, sometimes it misses a "Game Time Decision" (GTD) that was just announced on Twitter/X.
 3. **The "Trap Line" Rule:** If your engine says the Knicks should be favored by 9, but Vegas has them as +3.5, ask yourself: _"What does Vegas know that my 10-game rolling average doesn't?"_ (Usually, it's a specific player matchup or a "revenge game" narrative).
 
+### 🔒 Edge Cap Audit (Lifetime Dashboard)
+
+The Lifetime Dashboard (`post_mortem.py` → [2]) now includes an **Edge Cap Audit** section that helps you decide whether the cap needs adjusting:
+
+- **Capped vs. Uncapped Win Rates** — side-by-side comparison to see if capped bets underperform
+- **Raw Edge Distribution** — min/max/avg/median of the uncapped edges for capped bets
+- **Individual Capped Bet Log** — every capped bet with its raw edge, capped edge, and result
+- **Recommendation** — once 5+ decided capped bets exist, the system recommends keeping, raising, or lowering the cap
+
+The CSV now stores both `Raw_Edge` (uncapped) and `Edge_Capped` (YES/NO) columns. Historical bets without these columns are automatically reconstructed from `abs(Fair - Market)`.
+
 ---
 
 ## 🗺️ Roadmap

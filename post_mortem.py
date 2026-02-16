@@ -15,14 +15,14 @@ import pandas as pd
 import glob
 import os
 import re
+import json
 from datetime import datetime
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 BREAKEVEN_RATE = 0.524          # ATS break-even at -110 odds
 VIG = -110                      # Standard juice
 HIGH_SIGNAL_EDGE = 5            # Minimum edge for "high-signal" bets
-EDGE_TIERS = [(5, 10), (10, 15), (15, float('inf'))]
-EDGE_TIER_LABELS = ['5–10', '10–15', '15+']
+DEFAULT_EDGE_CAP = 10
 
 INJURY_FILE = "nba_injuries.csv"
 
@@ -42,6 +42,71 @@ def names_match(a, b):
     a_resolved = TEAM_ALIASES.get(a_low, a_low)
     b_resolved = TEAM_ALIASES.get(b_low, b_low)
     return a_resolved == b_resolved
+
+
+def load_edge_cap():
+    """Load edge cap from bankroll.json, falling back to default."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bankroll.json')
+    try:
+        with open(path) as f:
+            return json.load(f).get('edge_cap', DEFAULT_EDGE_CAP)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return DEFAULT_EDGE_CAP
+
+
+def get_raw_edge(row):
+    """Get the uncapped edge for a bet row.
+
+    Priority: Raw_Edge column > reconstruct from abs(Fair - Market) > fallback to Edge.
+    """
+    # 1. Use Raw_Edge column if present and valid
+    if 'Raw_Edge' in row.index:
+        try:
+            val = float(row['Raw_Edge'])
+            if val > 0:
+                return val
+        except (ValueError, TypeError):
+            pass
+    # 2. Reconstruct from Fair and Market columns
+    try:
+        fair = float(row['Fair'])
+        market = float(row['Market'])
+        return round(abs(fair - market), 2)
+    except (ValueError, TypeError, KeyError):
+        pass
+    # 3. Fallback: use the (possibly capped) Edge column
+    try:
+        return float(row['Edge'])
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def is_edge_capped(row, edge_cap=None):
+    """Determine if a bet's edge was capped.
+
+    Priority: Edge_Capped column > compare raw_edge to cap.
+    """
+    # 1. Use Edge_Capped column if present
+    if 'Edge_Capped' in row.index:
+        val = str(row['Edge_Capped']).strip().upper()
+        if val in ('YES', 'TRUE', '1'):
+            return True
+        if val in ('NO', 'FALSE', '0'):
+            return False
+    # 2. Infer from raw edge vs cap
+    if edge_cap is None:
+        edge_cap = load_edge_cap()
+    return get_raw_edge(row) > edge_cap
+
+
+def build_edge_tiers(edge_cap=None):
+    """Build dynamic edge tiers based on the current edge cap."""
+    if edge_cap is None:
+        edge_cap = load_edge_cap()
+    half = edge_cap / 2
+    tiers = [(half, edge_cap), (edge_cap, edge_cap * 1.5), (edge_cap * 1.5, float('inf'))]
+    labels = [f'{half:.0f}–{edge_cap:.0f}', f'{edge_cap:.0f}–{edge_cap * 1.5:.0f}', f'{edge_cap * 1.5:.0f}+']
+    return tiers, labels
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -274,17 +339,24 @@ def daily_post_mortem(date_str):
     injuries = load_injuries()
     if not all_losses.empty:
         section("Loss Analysis")
+        edge_cap = load_edge_cap()
         loss_margins = []
         injury_count = 0
         low_edge_count = 0
+        capped_count = 0
 
         for _, row in all_losses.iterrows():
             margin = parse_margin(row)
             notes = str(row.get('Notes', ''))
-            print(f"  ❌ {row['Away']} @ {row['Home']} | Pick: {row['Pick']} | Edge: {row['Edge']}")
+            raw = get_raw_edge(row)
+            capped = is_edge_capped(row, edge_cap)
+            cap_tag = f" ⚠️ CAPPED (raw: {raw})" if capped else ""
+            print(f"  ❌ {row['Away']} @ {row['Home']} | Pick: {row['Pick']} | Edge: {row['Edge']}{cap_tag}")
             if margin is not None:
                 print(f"     Margin: {margin}  |  {notes}")
                 loss_margins.append(margin)
+            if capped:
+                capped_count += 1
 
             # Injury check (alias-aware matching — Pick is nickname, CSV has full name)
             if injuries is not None:
@@ -303,17 +375,23 @@ def daily_post_mortem(date_str):
 
         print(f"\n  Losses with injury impact:  {injury_count}")
         print(f"  Losses with low edge (<10): {low_edge_count}")
+        if capped_count:
+            print(f"  Losses with edge capped:    {capped_count}")
         if loss_margins:
             print(f"  Avg margin of defeat:       {sum(loss_margins)/len(loss_margins):.1f}")
 
     # Win analysis
     if not all_wins.empty:
         section("Win Analysis")
+        edge_cap = load_edge_cap()
         win_margins = []
         for _, row in all_wins.iterrows():
             margin = parse_margin(row)
             notes = str(row.get('Notes', ''))
-            print(f"  ✅ {row['Away']} @ {row['Home']} | Pick: {row['Pick']} | Edge: {row['Edge']}")
+            raw = get_raw_edge(row)
+            capped = is_edge_capped(row, edge_cap)
+            cap_tag = f" ⚠️ CAPPED (raw: {raw})" if capped else ""
+            print(f"  ✅ {row['Away']} @ {row['Home']} | Pick: {row['Pick']} | Edge: {row['Edge']}{cap_tag}")
             if margin is not None:
                 print(f"     Margin: {margin:+d}  |  {notes}")
                 win_margins.append(margin)
@@ -508,7 +586,72 @@ def lifetime_dashboard():
         print("     2. Run: python update_results.py (after games finish)")
         print("     CLV columns will auto-populate in your bet tracker CSVs.")
 
-    # ── Edge Calibration ──
+    # ── Edge Cap Audit ──
+    edge_cap = load_edge_cap()
+    completed_audit = completed.copy()
+    completed_audit['Raw_Edge_Val'] = completed_audit.apply(get_raw_edge, axis=1)
+    completed_audit['Was_Capped'] = completed_audit.apply(lambda r: is_edge_capped(r, edge_cap), axis=1)
+    capped_bets = completed_audit[completed_audit['Was_Capped']]
+    uncapped_bets = completed_audit[~completed_audit['Was_Capped']]
+
+    section(f"🔒 Edge Cap Audit (cap = {edge_cap} pts)")
+    n_capped = len(capped_bets)
+    n_total = len(completed_audit)
+    print(f"  Current Edge Cap:     {edge_cap} pts")
+    print(f"  Capped Bets:          {n_capped} of {n_total} ({n_capped/n_total:.0%})" if n_total > 0 else "  Capped Bets:  0")
+
+    if n_capped > 0:
+        # Capped vs. uncapped win rates
+        capped_w = (capped_bets['Result'] == 'WIN').sum()
+        capped_l = (capped_bets['Result'] == 'LOSS').sum()
+        capped_decided = capped_w + capped_l
+        capped_rate = capped_w / capped_decided if capped_decided > 0 else 0
+        capped_units = capped_bets.apply(calc_units, axis=1).sum()
+
+        uncapped_w = (uncapped_bets['Result'] == 'WIN').sum()
+        uncapped_l = (uncapped_bets['Result'] == 'LOSS').sum()
+        uncapped_decided = uncapped_w + uncapped_l
+        uncapped_rate = uncapped_w / uncapped_decided if uncapped_decided > 0 else 0
+        uncapped_units = uncapped_bets.apply(calc_units, axis=1).sum()
+
+        print(f"\n  {'Category':<20} {'Record':<12} {'Win Rate':<12} {'P/L'}")
+        print(f"  {'─'*20} {'─'*12} {'─'*12} {'─'*10}")
+        print(f"  {'Capped (>' + str(int(edge_cap)) + ')':<20} {f'{capped_w}W-{capped_l}L':<12} {capped_rate:.1%}{'':<7} {capped_units:+.1f}")
+        print(f"  {'Uncapped (≤' + str(int(edge_cap)) + ')':<20} {f'{uncapped_w}W-{uncapped_l}L':<12} {uncapped_rate:.1%}{'':<7} {uncapped_units:+.1f}")
+
+        # Raw edge distribution for capped bets
+        raw_edges = capped_bets['Raw_Edge_Val']
+        print(f"\n  Capped Edge Distribution:")
+        print(f"    Min raw edge:    {raw_edges.min():.1f} pts")
+        print(f"    Max raw edge:    {raw_edges.max():.1f} pts")
+        print(f"    Avg raw edge:    {raw_edges.mean():.1f} pts")
+        print(f"    Median raw edge: {raw_edges.median():.1f} pts")
+
+        # Individual capped bets
+        print(f"\n  Capped Bet Log:")
+        for _, row in capped_bets.iterrows():
+            result_icon = '✅' if row['Result'] == 'WIN' else '❌' if row['Result'] == 'LOSS' else '➡️'
+            print(f"    {result_icon} {row['Away']} @ {row['Home']} | Raw: {row['Raw_Edge_Val']:.1f} → Capped: {row['Edge']} | {row['Result']}")
+
+        # Recommendation
+        print()
+        if capped_decided >= 5:
+            if capped_rate < uncapped_rate and capped_rate < BREAKEVEN_RATE:
+                print(f"  🔴 Capped bets winning at {capped_rate:.0%} vs {uncapped_rate:.0%} uncapped.")
+                print(f"     → The cap is doing its job. Consider lowering it further.")
+            elif capped_rate >= uncapped_rate and capped_rate >= BREAKEVEN_RATE:
+                print(f"  📈 Capped bets winning at {capped_rate:.0%} vs {uncapped_rate:.0%} uncapped.")
+                print(f"     → Capped bets are profitable — consider raising the cap to capture more edge.")
+            else:
+                print(f"  ⚠️  Mixed signals. Keep the cap at {int(edge_cap)} and revisit after more data.")
+        else:
+            print(f"  ⚠️  Only {capped_decided} decided capped bets — need 5+ for meaningful recommendation.")
+    else:
+        print("  ✅ No edges have exceeded the cap yet.")
+    print(f"\n  💡 Adjust the cap: post_mortem.py → [5] Bankroll Tracker → [R] Reset Settings → Edge Cap")
+
+    # ── Edge Calibration (uses raw edges) ──
+    EDGE_TIERS, EDGE_TIER_LABELS = build_edge_tiers(edge_cap)
     section("Edge Calibration (do bigger edges win more?)")
     print(f"  {'Tier':<10} {'Record':<12} {'Win Rate':<12} {'P/L':<10} {'Verdict'}")
     print(f"  {'─'*10} {'─'*12} {'─'*12} {'─'*10} {'─'*15}")
@@ -517,9 +660,9 @@ def lifetime_dashboard():
     prev_rate = None  # None means no previous tier with data yet
     tier_rates = []   # collect (label, rate, n) for all non-empty tiers
     completed_cal = completed.copy()
-    completed_cal['Edge'] = pd.to_numeric(completed_cal['Edge'], errors='coerce').fillna(0)
+    completed_cal['_RawEdge'] = completed_cal.apply(get_raw_edge, axis=1)
     for (lo, hi_bound), label in zip(EDGE_TIERS, EDGE_TIER_LABELS):
-        tier = completed_cal[(completed_cal['Edge'] >= lo) & (completed_cal['Edge'] < hi_bound)]
+        tier = completed_cal[(completed_cal['_RawEdge'] >= lo) & (completed_cal['_RawEdge'] < hi_bound)]
         if tier.empty:
             print(f"  {label:<10} {'—':<12} {'—':<12} {'—':<10} No data")
             continue
@@ -539,12 +682,14 @@ def lifetime_dashboard():
         print(f"  {label:<10} {f'{len(tw)}W-{len(tl)}L':<12} {tr:.1%}{'':<7} {tu:+.1f}{'':<5} {verdict}")
         prev_rate = tr  # track last non-empty tier rate
 
+    print(f"\n  Note: Tiers use raw (uncapped) edges. Tiers adjust with your cap ({int(edge_cap)} pts).")
+
     if calibration_ok and len(tier_rates) >= 2:
-        print("\n  ✅ Calibration: Higher edges are winning at higher rates — model is well-calibrated.")
+        print("  ✅ Calibration: Higher edges are winning at higher rates — model is well-calibrated.")
     elif calibration_ok:
-        print("\n  ⚠️  Calibration: Not enough tier data to fully assess (need 2+ tiers with bets).")
+        print("  ⚠️  Calibration: Not enough tier data to fully assess (need 2+ tiers with bets).")
     else:
-        print("\n  ⚠️  Calibration issue: A lower-edge tier is outperforming a higher one.")
+        print("  ⚠️  Calibration issue: A lower-edge tier is outperforming a higher one.")
         print("     This may indicate the model overestimates large edges, or sample size is too small.")
 
     # ── Streak & Drawdown ──
@@ -692,20 +837,21 @@ def edge_calibration_report():
         return
 
     header("📐 Edge Calibration Report")
+    print("  Note: Uses raw (uncapped) edges for accurate bucketing.\n")
 
-    # Coerce Edge to numeric
+    # Compute raw edges for each bet
     completed = completed.copy()
-    completed['Edge'] = pd.to_numeric(completed['Edge'], errors='coerce').fillna(0)
+    completed['_RawEdge'] = completed.apply(get_raw_edge, axis=1)
 
     # Fine-grained edge buckets
     buckets = [(0, 3), (3, 5), (5, 8), (8, 10), (10, 15), (15, 20), (20, float('inf'))]
     bucket_labels = ['0–3', '3–5', '5–8', '8–10', '10–15', '15–20', '20+']
 
-    print(f"\n  {'Edge':<10} {'Bets':<8} {'Record':<12} {'Win Rate':<12} {'P/L':<10} {'Avg Margin'}")
+    print(f"  {'Edge':<10} {'Bets':<8} {'Record':<12} {'Win Rate':<12} {'P/L':<10} {'Avg Margin'}")
     print(f"  {'─'*10} {'─'*8} {'─'*12} {'─'*12} {'─'*10} {'─'*12}")
 
     for (lo, hi_bound), label in zip(buckets, bucket_labels):
-        tier = completed[(completed['Edge'] >= lo) & (completed['Edge'] < hi_bound)]
+        tier = completed[(completed['_RawEdge'] >= lo) & (completed['_RawEdge'] < hi_bound)]
         if tier.empty:
             print(f"  {label:<10} {'0':<8} {'—':<12} {'—':<12} {'—':<10} {'—'}")
             continue
@@ -722,12 +868,12 @@ def edge_calibration_report():
         bar = '█' * int(tr * 20) + '░' * (20 - int(tr * 20))
         print(f"  {label:<10} {len(tier):<8} {f'{len(tw)}W-{len(tl)}L':<12} {tr:.1%} {bar} {tu:+.1f}{'':<5} {avg_m}")
 
-    # Correlation check
+    # Correlation check (uses raw edges)
     section("Edge vs. Win Rate Correlation")
     completed_with_margin = completed.copy()
     completed_with_margin['won'] = (completed_with_margin['Result'] == 'WIN').astype(int)
     try:
-        corr = completed_with_margin[['Edge', 'won']].corr().loc['Edge', 'won']
+        corr = completed_with_margin[['_RawEdge', 'won']].corr().loc['_RawEdge', 'won']
         if corr > 0.15:
             print(f"  Correlation: {corr:.3f} — ✅ Positive correlation (model edge is predictive)")
         elif corr > 0:

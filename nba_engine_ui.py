@@ -174,7 +174,7 @@ def run_ui():
                     bet_val = bet_in if bet_in else ''
 
                     # Log to date-stamped CSV
-                    log_bet(gid, away, home, fair_line, market, edge, pick, kelly, conf, bet_type, book, odds_val, bet_val)
+                    log_bet(gid, away, home, fair_line, market, edge, pick, kelly, conf, bet_type, book, odds_val, bet_val, raw_edge=raw_edge, edge_capped=edge_capped)
 
                     print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
 
