@@ -68,10 +68,11 @@ Follow these steps to get the most out of the NBA Prediction Engine:
 
 3. **Automated Flagging & Recommendation**
    - Every game shows a **bet recommendation** with a signal tier:
-     - 🚨 **EXTREME EDGE** (>11 pts) — verify no late scratches
+     - 🚨 **REVIEW REQUIRED** (edge > cap) — edge capped, model may be missing key info. Investigate before betting.
      - 🔥 **STRONG SIGNAL** (edge ≥ 5, HIGH confidence) — highest conviction
      - 📊 **LEAN** (edge ≥ 3) — moderate edge, worth considering
      - 📉 **LOW EDGE** (<3 pts) — thin margin, proceed with caution
+   - The **edge cap** (default: 10 pts) is tunable via the Bankroll Tracker (`post_mortem.py` → [5] → [R]). Edges above the cap are clamped and flagged as suspicious.
    - If late-breaking lineup/injury news is detected, the UI will alert you to double-check before betting.
 
 4. **Logging and Tracking**
@@ -215,7 +216,7 @@ You'll see a menu with five options:
 
 **[4] Daily Trend & Profit Curve** — Day-by-day P/L with cumulative rolling win rate and an ASCII profit curve chart.
 
-**[5] Bankroll Tracker** — Set a starting bankroll and unit size, then track day-by-day balance changes with real dollars. Includes Quarter-Kelly recommended bet sizing based on lifetime win rate. Press `[R]` to reset your bankroll and unit size when you're ready to scale up.
+**[5] Bankroll Tracker** — Set a starting bankroll, unit size, and edge cap, then track day-by-day balance changes with real dollars. Includes Quarter-Kelly recommended bet sizing based on lifetime win rate. Press `[R]` to reset your settings (bankroll, unit size, edge cap) when you're ready to scale up.
 
 ---
 
@@ -375,13 +376,13 @@ $$Fair\ Line = Points_{spread} + HCA + \sum Rest + \sum Injury$$
 
 ---
 
-## 🛠️ Extreme Edge
+## 🛠️ Edge Cap & Review Required
 
-Those "Extreme Edge" alerts are exactly what you want to see—it means the engine is doing its job by flagging games where the math significantly diverges from the Vegas line.
+When the engine's predicted edge exceeds your **edge cap** (default: 10 pts, tunable via `post_mortem.py` → [5] → [R]), the edge is clamped and the game is flagged as **🚨 REVIEW REQUIRED**. This guardrail exists because historically, extreme edges (15+ pts) have performed at ~40% — worse than moderate edges — suggesting the model is probably reacting to noise rather than a true market inefficiency.
 
-For the **February 8, 2026** slate you just ran, your engine is reacting to a massive amount of "noise" in the injury reports. Here is the breakdown of why those specific games triggered alerts:
+For example, here's how the engine flagged suspicious edges on the **February 8, 2026** slate, where massive injury-report noise drove inflated predictions:
 
-### 🔍 Breakdown of the "Extreme" Edges
+### 🔍 Example Breakdown
 
 | Game              | Edge          | Why the Alert Triggered                                                                                                                                                                                                                                                             |
 | ----------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -393,7 +394,7 @@ For the **February 8, 2026** slate you just ran, your engine is reacting to a ma
 
 ### 🛠️ How to Handle these Alerts
 
-When you see an edge over 10 points, **don't just bet the "Recommended Side" immediately.** Use the "Human in the Loop" method:
+When you see an edge above your cap (default: 10 pts), the engine caps the displayed edge and shows a **🚨 REVIEW REQUIRED** warning. The cap is tunable — adjust it in the Bankroll Tracker (`post_mortem.py` → [5] → [R] Reset Settings → Edge Cap). Use the "Human in the Loop" method:
 
 1. **Check the "Questionables":** For G1, the Knicks have **Karl-Anthony Towns, Josh Hart, and OG Anunoby** all listed as Questionable. If all three play, your "Recommended Side" (Knicks) is a lock. If all three sit, that 12.59-point edge might actually vanish or flip.
 2. **Verify the Scraper:** Since the scraper pulls from CBS, sometimes it misses a "Game Time Decision" (GTD) that was just announced on Twitter/X.

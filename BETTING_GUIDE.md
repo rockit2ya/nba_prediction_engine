@@ -106,10 +106,11 @@ On first run, you'll set:
 
 - **Starting bankroll** (e.g., $1,000)
 - **Unit size** (default = bankroll / 100)
+- **Edge cap** (default = 10 pts — edges above this are capped and flagged as suspicious)
 
 The tracker then shows day-by-day balance changes using real bet data (when available) or flat-unit estimates. It also provides **Quarter-Kelly recommended bet sizing** based on your lifetime win rate.
 
-**Ready to scale up?** Press `[R]` in the bankroll tracker to reset your starting bankroll and unit size at any time.
+**Ready to scale up?** Press `[R]` in the bankroll tracker to reset your starting bankroll, unit size, and edge cap at any time.
 
 ---
 
