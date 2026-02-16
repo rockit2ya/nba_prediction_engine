@@ -535,6 +535,8 @@ def lifetime_dashboard():
 
         high_kelly = high.apply(calc_kelly_units, axis=1).sum()
         section("High-Signal Bets (Edge ≥ 5)")
+        print(f"  A 'high-signal' bet is any pick where the model's edge is {HIGH_SIGNAL_EDGE}+ pts.")
+        print(f"  These are your highest-conviction plays and should win at a higher rate.\n")
         print(f"  Record:          {len(hw)}W - {len(hl)}L")
         print(f"  Win Rate:        {high_rate:.1%}")
         print(f"  Grade:           {grade_win_rate(high_rate, len(high))}")
@@ -785,10 +787,10 @@ def lifetime_dashboard():
     # Check 2: Positive ROI
     checks.append(("Positive ROI", roi > 0, f"{roi:+.1f}%"))
 
-    # Check 3: High-signal win rate
+    # Check 3: High-signal win rate (bets with edge >= 5 pts)
     if not high.empty:
         high_wr = len(hw) / (len(hw) + len(hl)) if (len(hw) + len(hl)) > 0 else 0
-        checks.append(("High-Signal Win Rate > 55%", high_wr >= 0.55, f"{high_wr:.1%}"))
+        checks.append((f"High-Signal (Edge ≥ {HIGH_SIGNAL_EDGE}) Win Rate > 55%", high_wr >= 0.55, f"{high_wr:.1%}"))
 
     # Check 4: Edge calibration
     checks.append(("Edge Calibration (higher edges win more)", calibration_ok, ""))
