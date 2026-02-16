@@ -102,7 +102,10 @@ def run_ui():
 
                     # Pro Logic: Injury Star Tax + Fatigue + HCA + late-breaking flag
                     fair_line, q_players, news, flag, star_tax_failed = predict_nba_spread(away, home)
-                    edge = round(abs(fair_line - market), 2)
+                    raw_edge = round(abs(fair_line - market), 2)
+                    EDGE_CAP = 10
+                    edge = min(raw_edge, EDGE_CAP)
+                    edge_capped = raw_edge > EDGE_CAP
                     kelly = calculate_kelly(market, fair_line)
 
                     # Confidence Grade Logic
@@ -114,10 +117,18 @@ def run_ui():
                     print("\n" + "•"*45)
                     print(f"PRO ENGINE LINE: {fair_line}")
                     print(f"MARKET SPREAD:   {market}")
-                    print(f"CALCULATED EDGE: {edge} pts")
+                    if edge_capped:
+                        print(f"CALCULATED EDGE: {edge} pts (capped from {raw_edge})")
+                    else:
+                        print(f"CALCULATED EDGE: {edge} pts")
                     print(f"KELLY SUGGESTION: Risk {kelly}% of Bankroll")
                     print(f"MODEL CONFIDENCE: {conf}")
                     print("•"*45)
+
+                    if edge_capped:
+                        print(f"⚠️  EDGE CAP HIT: Raw edge was {raw_edge} pts — model may be missing key info.")
+                        print(f"   → Large edges often mean the market knows something the model doesn't.")
+                        print(f"   → Investigate injuries, motivation, or lineup news before betting.")
 
                     if q_players:
                         print(f"⚠️  GTD/QUESTIONABLE: {', '.join(q_players)}")
@@ -128,8 +139,8 @@ def run_ui():
                         print(f"   → Manually verify key player statuses before placing this bet.")
 
                     recommendation = home if fair_line < market else away
-                    if edge > 11:
-                        print(f"🚨 EXTREME EDGE ({edge} pts): Bet {recommendation} — verify no late scratches!")
+                    if edge_capped:
+                        print(f"🚨 REVIEW REQUIRED: {recommendation} (edge capped at {EDGE_CAP} — verify before betting)")
                     elif edge >= 5 and "HIGH" in conf:
                         print(f"🔥 STRONG SIGNAL: Bet {recommendation}")
                     elif edge >= 3:
