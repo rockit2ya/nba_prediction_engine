@@ -861,7 +861,7 @@ def bankroll_tracker():
             unit_size = round(starting / 100, 2)
 
         try:
-            cap_str = input("  Edge cap (max edge before warning, default = 10): ").strip()
+            cap_str = input("  Edge cap (max edge before warning, default = 10): ").strip().lower().replace('pts', '').replace('pt', '').strip()
             edge_cap = int(cap_str) if cap_str else 10
         except (ValueError, EOFError):
             edge_cap = 10
@@ -914,7 +914,7 @@ def bankroll_tracker():
         except (ValueError, EOFError):
             new_unit = round(new_start / 100, 2)
         try:
-            cap_str = input(f"  New edge cap (current: {edge_cap} pts, Enter to keep): ").strip()
+            cap_str = input(f"  New edge cap (current: {edge_cap} pts, Enter to keep): ").strip().lower().replace('pts', '').replace('pt', '').strip()
             new_cap = int(cap_str) if cap_str else edge_cap
         except (ValueError, EOFError):
             new_cap = edge_cap
