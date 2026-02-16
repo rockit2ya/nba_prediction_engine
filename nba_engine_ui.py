@@ -1,10 +1,22 @@
 import os
+import json
 import subprocess
 import time
 from datetime import datetime
 from nba_api.live.nba.endpoints import scoreboard
 from nba_api.stats.static import teams
 from nba_analytics import predict_nba_spread, log_bet, get_cache_times, calculate_pace_and_ratings
+
+DEFAULT_EDGE_CAP = 10
+
+def load_edge_cap():
+    """Load edge cap from bankroll.json, falling back to default."""
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bankroll.json')
+    try:
+        with open(path) as f:
+            return json.load(f).get('edge_cap', DEFAULT_EDGE_CAP)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return DEFAULT_EDGE_CAP
 
 def calculate_kelly(market, fair_line):
     """Conservative Quarter-Kelly Criterion bankroll management."""
@@ -103,7 +115,7 @@ def run_ui():
                     # Pro Logic: Injury Star Tax + Fatigue + HCA + late-breaking flag
                     fair_line, q_players, news, flag, star_tax_failed = predict_nba_spread(away, home)
                     raw_edge = round(abs(fair_line - market), 2)
-                    EDGE_CAP = 10
+                    EDGE_CAP = load_edge_cap()
                     edge = min(raw_edge, EDGE_CAP)
                     edge_capped = raw_edge > EDGE_CAP
                     kelly = calculate_kelly(market, fair_line)

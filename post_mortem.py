@@ -860,16 +860,24 @@ def bankroll_tracker():
         except (ValueError, EOFError):
             unit_size = round(starting / 100, 2)
 
+        try:
+            cap_str = input("  Edge cap (max edge before warning, default = 10): ").strip()
+            edge_cap = int(cap_str) if cap_str else 10
+        except (ValueError, EOFError):
+            edge_cap = 10
+
         bankroll_data = {
             "starting_bankroll": starting,
             "unit_size": unit_size,
+            "edge_cap": edge_cap,
             "created": datetime.now().strftime('%Y-%m-%d')
         }
         save_bankroll(bankroll_data)
-        print(f"\n  ✅ Bankroll saved: ${starting:,.2f} | Unit size: ${unit_size:,.2f}")
+        print(f"\n  ✅ Bankroll saved: ${starting:,.2f} | Unit size: ${unit_size:,.2f} | Edge cap: {edge_cap} pts")
 
     starting = bankroll_data['starting_bankroll']
     unit_size = bankroll_data['unit_size']
+    edge_cap = bankroll_data.get('edge_cap', 10)
 
     # Load all completed bets
     df = load_all_trackers()
@@ -888,8 +896,9 @@ def bankroll_tracker():
     section("Configuration")
     print(f"  Starting Bankroll:  ${starting:,.2f}")
     print(f"  Unit Size:          ${unit_size:,.2f}")
+    print(f"  Edge Cap:           {edge_cap} pts")
     print(f"  Tracking Since:     {bankroll_data.get('created', dates[0])}")
-    print(f"\n  [R] Reset Bankroll   [Enter] Continue\n")
+    print(f"\n  [R] Reset Settings   [Enter] Continue\n")
 
     choice = input("  ").strip().upper()
     if choice == 'R':
@@ -904,16 +913,23 @@ def bankroll_tracker():
             new_unit = float(new_unit_str) if new_unit_str else round(new_start / 100, 2)
         except (ValueError, EOFError):
             new_unit = round(new_start / 100, 2)
+        try:
+            cap_str = input(f"  New edge cap (current: {edge_cap} pts, Enter to keep): ").strip()
+            new_cap = int(cap_str) if cap_str else edge_cap
+        except (ValueError, EOFError):
+            new_cap = edge_cap
 
         bankroll_data = {
             "starting_bankroll": new_start,
             "unit_size": new_unit,
+            "edge_cap": new_cap,
             "created": datetime.now().strftime('%Y-%m-%d')
         }
         save_bankroll(bankroll_data)
         starting = new_start
         unit_size = new_unit
-        print(f"\n  ✅ Bankroll reset: ${starting:,.2f} | Unit size: ${unit_size:,.2f}\n")
+        edge_cap = new_cap
+        print(f"\n  ✅ Settings updated: ${starting:,.2f} | Unit: ${unit_size:,.2f} | Edge cap: {edge_cap} pts\n")
 
     # Day-by-day bankroll
     section("Daily Bankroll")
