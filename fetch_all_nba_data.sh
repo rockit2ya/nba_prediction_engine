@@ -58,10 +58,10 @@ if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache
   echo "" | tee -a "$LOG"
   echo "[SUMMARY] NBA Data Fetch Counts:" | tee -a "$LOG"
   # Parse counts from log
-  STATS_COUNT=$(grep -Eo 'Scraped [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1)
-  INJURY_COUNT=$(grep -Eo 'Saved injury data to nba_injuries.csv with [0-9]+ records' "$LOG" | grep -Eo '[0-9]+' | tail -1)
-  REST_COUNT=$(grep -Eo 'Cached rest penalty data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1)
-  NEWS_COUNT=$(grep -Eo 'Cached [0-9]+ NBA news items' "$LOG" | grep -Eo '[0-9]+' | tail -1)
+  STATS_COUNT=$(grep -Eo 'Scraped [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
+  INJURY_COUNT=$(grep -Eo 'Saved injury data to nba_injuries.csv with [0-9]+ records' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
+  REST_COUNT=$(grep -Eo 'Cached rest penalty data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
+  NEWS_COUNT=$(grep -Eo 'Cached [0-9]+ NBA news items' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   ODDS_COUNT=$(grep -Eo 'Fetched [0-9]+ game' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   echo "  - NBA Team Stats: ${STATS_COUNT:-0} teams" | tee -a "$LOG"
   echo "  - Injuries: ${INJURY_COUNT:-0} records" | tee -a "$LOG"
