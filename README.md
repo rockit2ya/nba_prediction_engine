@@ -11,7 +11,7 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 - **Situational Modeling:** Factors in Back-to-Back (B2B) fatigue and dynamic Home Court Advantage (HCA).
 - **Bayesian Star Tax:** Uses individual "On-Off" metrics weighted by official injury status (OUT, GTD, Doubtful).
 - **Dual-Source Scoreboard:** Primary schedule via NBA ScoreboardV2 API with automatic ESPN web-scrape fallback — games load reliably even during All-Star breaks and off days.
-- **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research.
+- **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research. Upcoming games run in **preview mode** (no bet logging) to encourage re-analysis with fresh data on game day.
 - **Optimized Performance:** Multi-threaded API calls and persistent sessions for sub-2-second analysis.
 - **Kelly Criterion Integration:** Calculates conservative bankroll risk for every edge found.
 - **CLV Tracking:** Fetches live odds from The Odds API to measure Closing Line Value — the gold standard for proving real edge.
@@ -61,7 +61,8 @@ Follow these steps to get the most out of the NBA Prediction Engine:
 2. **Analyze Games and Generate Recommendations**
    - Run the engine: `python nba_engine_ui.py`
    - The UI displays today's NBA schedule via ScoreboardV2 (with ESPN fallback).
-   - Use `[U]` to browse the next 7 days of upcoming games and select any for analysis.
+   - Use `[U]` to browse the next 7 days of upcoming games and select any for preview analysis.
+   - **Note:** Upcoming games (`U#`) run in **preview mode** — full analysis is shown but not logged to the bet tracker. This ensures bets are only recorded with fresh game-day data. Re-analyze on game day to log.
    - For each game, input the market line when prompted.
    - The engine calculates the fair line, edge, and confidence, factoring in:
      - Advanced stats (offensive/defensive ratings, pace)
@@ -79,7 +80,8 @@ Follow these steps to get the most out of the NBA Prediction Engine:
    - If late-breaking lineup/injury news is detected, the UI will alert you to double-check before betting.
 
 4. **Logging and Tracking**
-   - Each analysis is logged to a date-stamped CSV (`bet_tracker_YYYY-MM-DD.csv`) for post-mortem review.
+   - Today's games (`G#`) and custom matchups (`C`) are logged to a date-stamped CSV (`bet_tracker_YYYY-MM-DD.csv`) for post-mortem review.
+   - **Upcoming games (`U#`) are not logged** — they run in preview mode since injury/line data may change by game day.
    - You'll be prompted for:
      - **Pick** — defaults to the engine's recommendation, but you can override with any team name
      - **Bet Type** — Spread (default), Moneyline, or Over/Under
@@ -100,7 +102,7 @@ This workflow ensures your predictions are based on the most current cached data
 
 > **📡 Dual-Source Scoreboard:** The engine uses `ScoreboardV2` (NBA stats API) as the primary schedule source, which supports any date and populates reliably. If the NBA API is unreachable, it automatically falls back to scraping ESPN's schedule page. The source is displayed in the UI header (e.g., `📡 Source: NBA API` or `📡 Source: ESPN`).
 >
-> **📆 Upcoming Games:** Use the `[U]` command to browse the next 7 days of NBA games. Each game gets a selectable ID (e.g., `U1`, `U12`) so you can run pre-game analysis days in advance — great for planning bets before lines move.
+> **📆 Upcoming Games:** Use the `[U]` command to browse the next 7 days of NBA games. Each game gets a selectable ID (e.g., `U1`, `U12`) so you can run pre-game analysis days in advance — great for scouting before lines move. Upcoming games run in **preview mode**: full analysis is displayed but not logged to the bet tracker, since injuries, lines, and rest data may change by game day. Re-analyze on game day with `[G#]` to log a real bet.
 >
 > **💡 Custom Matchups:** Use `[C]` to analyze any matchup manually, even hypothetical ones. Just enter the away and home team names and the engine runs the full analysis using cached stats, injuries, and rest data.
 
