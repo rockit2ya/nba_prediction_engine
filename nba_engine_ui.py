@@ -199,6 +199,8 @@ def run_ui():
                     continue
 
             if choice in schedule or choice == 'C':
+                is_upcoming = choice.startswith('U')
+
                 if choice == 'C':
                     custom_counter += 1
                     gid = f"C{custom_counter}"
@@ -208,7 +210,10 @@ def run_ui():
                     gid = choice
                     away, home = schedule[choice]
 
-                print(f"\n[ANALYZING] {away} vs {home}...")
+                if is_upcoming:
+                    print(f"\n[PREVIEW] {away} vs {home} (upcoming game — research mode)")
+                else:
+                    print(f"\n[ANALYZING] {away} vs {home}...")
 
                 try:
                     line_in = input(f"Market Line for {home} (e.g., -5.5): ").strip()
@@ -270,23 +275,30 @@ def run_ui():
                     else:
                         print(f"📉 LOW EDGE: {recommendation} (thin margin — proceed with caution)")
 
-                    # Optional: collect bet details
-                    print("\n  📝 Log bet details (press Enter to skip any):")
-                    pick_in = input(f"     Betting on [{recommendation}] or override (type team name): ").strip()
-                    pick = pick_in if pick_in else recommendation
-                    bet_type = input("     Bet type (S=Spread, M=Moneyline, O=Over/Under) [S]: ").strip().upper()
-                    bet_type = {'S': 'Spread', 'M': 'Moneyline', 'O': 'Over/Under'}.get(bet_type, 'Spread')
-                    book = input("     Sportsbook (e.g., DraftKings, FanDuel): ").strip()
-                    odds_in = input("     Odds (e.g., -110): ").strip()
-                    bet_in = input("     Bet amount in $ (e.g., 50): ").strip()
+                    if is_upcoming:
+                        # Preview mode — don't log to bet tracker
+                        print("\n  📋 PREVIEW ONLY — This is an upcoming game.")
+                        print("     Data may change by game day (injuries, lines, rest).")
+                        print("     Re-analyze on game day to log a bet.")
+                        print(f"\n[PREVIEW COMPLETE] Returning to Scoreboard...")
+                    else:
+                        # Live game — full logging flow
+                        print("\n  📝 Log bet details (press Enter to skip any):")
+                        pick_in = input(f"     Betting on [{recommendation}] or override (type team name): ").strip()
+                        pick = pick_in if pick_in else recommendation
+                        bet_type = input("     Bet type (S=Spread, M=Moneyline, O=Over/Under) [S]: ").strip().upper()
+                        bet_type = {'S': 'Spread', 'M': 'Moneyline', 'O': 'Over/Under'}.get(bet_type, 'Spread')
+                        book = input("     Sportsbook (e.g., DraftKings, FanDuel): ").strip()
+                        odds_in = input("     Odds (e.g., -110): ").strip()
+                        bet_in = input("     Bet amount in $ (e.g., 50): ").strip()
 
-                    odds_val = odds_in if odds_in else ''
-                    bet_val = bet_in if bet_in else ''
+                        odds_val = odds_in if odds_in else ''
+                        bet_val = bet_in if bet_in else ''
 
-                    # Log to date-stamped CSV
-                    log_bet(gid, away, home, fair_line, market, edge, pick, kelly, conf, bet_type, book, odds_val, bet_val, raw_edge=raw_edge, edge_capped=edge_capped)
+                        # Log to date-stamped CSV
+                        log_bet(gid, away, home, fair_line, market, edge, pick, kelly, conf, bet_type, book, odds_val, bet_val, raw_edge=raw_edge, edge_capped=edge_capped)
 
-                    print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
+                        print(f"\n[SUCCESS] Analysis logged. Returning to Scoreboard...")
 
                 except Exception as e:
                     print(f"❌ Error during analysis: {e}")
