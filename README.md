@@ -244,6 +244,15 @@ These scripts provide additional analysis, data checks, and manual overrides for
   - Usage: `python text_to_image.py <input.txt> [output.png]`
   - Tip: Use the VS Code **Terminal Capture** extension to save terminal output to a text file first.
 
+- **schedule_scraper.py**
+  - Multi-source NBA schedule comparison tool. Fetches today's (or any date's) games from up to 4 sources — ESPN web scrape, NBA.com stats API, nba_api Live Scoreboard, and nba_api ScoreboardV2 — then prints a side-by-side comparison grid showing which sources agree. Useful for validating schedule data, debugging missing games, or verifying the engine's dual-source fallback logic.
+  - Usage:
+    ```bash
+    python schedule_scraper.py              # Compare sources for today
+    python schedule_scraper.py 2026-02-22   # Compare sources for a specific date
+    ```
+  - Also used internally by the engine: `nba_engine_ui.py` imports `scrape_espn` from this module as its ESPN fallback source.
+
 These tools are optional but recommended for power users who want deeper insight, custom data, or extra validation before betting.
 
 ---
