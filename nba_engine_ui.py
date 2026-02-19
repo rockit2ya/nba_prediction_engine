@@ -2,10 +2,11 @@ import os
 import json
 import subprocess
 import time
-from datetime import datetime
-from nba_api.live.nba.endpoints import scoreboard
+from datetime import datetime, timedelta, date
+from nba_api.stats.endpoints import scoreboardv2
 from nba_api.stats.static import teams
 from nba_analytics import predict_nba_spread, log_bet, get_cache_times, calculate_pace_and_ratings
+from schedule_scraper import scrape_espn, normalize_team
 
 DEFAULT_EDGE_CAP = 10
 
@@ -24,6 +25,68 @@ def calculate_kelly(market, fair_line):
     prob = min(0.70, max(0.48, 0.524 + (edge * 0.015)))
     kelly_f = ((b * prob) - (1 - prob)) / b
     return round(max(0, kelly_f * 0.25) * 100, 2)
+
+# ── Team ID lookup for ScoreboardV2 ──────────────────────────────────────
+_ALL_TEAMS = teams.get_teams()
+_TEAM_ID_TO_NAME = {t['id']: t['full_name'] for t in _ALL_TEAMS}
+
+
+def fetch_games_scoreboardv2(target_date):
+    """Fetch games from nba_api ScoreboardV2 for a given date.
+    Returns list of (away_name, home_name, status_text) tuples."""
+    try:
+        sb = scoreboardv2.ScoreboardV2(
+            game_date=target_date.strftime('%Y-%m-%d'),
+            league_id='00',
+            day_offset=0
+        )
+        header = sb.game_header.get_dict()
+        headers_list = header['headers']
+        rows = header['data']
+
+        home_idx = headers_list.index('HOME_TEAM_ID')
+        away_idx = headers_list.index('VISITOR_TEAM_ID')
+        status_idx = headers_list.index('GAME_STATUS_TEXT')
+
+        games = []
+        seen = set()
+        for row in rows:
+            away = _TEAM_ID_TO_NAME.get(row[away_idx], str(row[away_idx]))
+            home = _TEAM_ID_TO_NAME.get(row[home_idx], str(row[home_idx]))
+            status = row[status_idx]
+            key = (away, home)
+            if key not in seen:
+                seen.add(key)
+                games.append((away, home, status))
+        return games
+    except Exception as e:
+        return None  # Signal caller to try fallback
+
+
+def fetch_games_espn(target_date):
+    """Fallback: scrape ESPN schedule for a given date.
+    Returns list of (away_name, home_name, status_text) tuples."""
+    try:
+        espn_games = scrape_espn(target_date)
+        return [(g['away'], g['home'], g.get('time', '')) for g in espn_games]
+    except Exception:
+        return []
+
+
+def load_schedule_for_date(target_date):
+    """Load games for a date: ScoreboardV2 primary, ESPN fallback.
+    Returns (games_list, source_label)."""
+    games = fetch_games_scoreboardv2(target_date)
+    if games is not None and len(games) > 0:
+        return games, 'NBA API'
+
+    # Fallback to ESPN
+    games = fetch_games_espn(target_date)
+    if games:
+        return games, 'ESPN'
+
+    return [], None
+
 
 def run_ui():
     today_display = datetime.now().strftime("%B %d, %Y")
@@ -48,23 +111,22 @@ def run_ui():
             print("="*75)
 
             schedule = {}
-            try:
-                sb = scoreboard.ScoreBoard()
-                games = sb.get_dict()['scoreboard']['games']
+            today = date.today()
+            games, source = load_schedule_for_date(today)
 
-                for i, game in enumerate(games):
+            if games:
+                if source:
+                    print(f"📡 Source: {source}")
+                for i, (away, home, status) in enumerate(games):
                     gid = f"G{i+1}"
-                    away = game['awayTeam']['teamName']
-                    home = game['homeTeam']['teamName']
-                    status = game['gameStatusText']
                     schedule[gid] = (away, home)
-                    print(f"{gid:<4} {away:<20} @ {home:<20} {status}")
-            except Exception:
-                print("❌ Scoreboard Error: Unable to reach NBA Stats Server.")
-                print("💡 TIP: Type 'C' to analyze a Custom Matchup manually.")
+                    print(f"{gid:<4} {away:<24} @ {home:<24} {status}")
+            else:
+                print("📅 No games scheduled today (All-Star break or off day).")
+                print("💡 TIP: Type 'U' to view upcoming games, or 'C' for a custom matchup.")
 
             print("-" * 75)
-            print("COMMANDS: [G#] (Analyze) | [R] (Refresh Data) | [C] (Custom) | [Q] (Quit)")
+            print("COMMANDS: [G#] (Analyze) | [U] (Upcoming) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
             choice = input("Enter Command: ").upper()
 
             if choice == 'Q':
@@ -88,7 +150,55 @@ def run_ui():
                     print("[✓] All caches reloaded.")
                 continue
 
-            elif choice in schedule or choice == 'C':
+            elif choice == 'U':
+                # ── Upcoming Games (next 7 days) ──
+                print("\n📆 UPCOMING NBA SCHEDULE")
+                print("=" * 75)
+                upcoming_schedule = {}
+                game_counter = 0
+
+                for day_offset in range(1, 8):
+                    future_date = today + timedelta(days=day_offset)
+                    day_games, src = load_schedule_for_date(future_date)
+                    if not day_games:
+                        continue
+
+                    day_label = future_date.strftime('%A, %B %-d')
+                    src_tag = f" ({src})" if src else ""
+                    print(f"\n  {day_label}{src_tag}")
+                    print(f"  {'-' * 65}")
+
+                    for away, home, status in day_games:
+                        game_counter += 1
+                        gid = f"U{game_counter}"
+                        upcoming_schedule[gid] = (away, home)
+                        print(f"  {gid:<5} {away:<24} @ {home:<24} {status}")
+
+                if not upcoming_schedule:
+                    print("  No upcoming games found for the next 7 days.")
+                else:
+                    # Merge upcoming into schedule so user can analyze them
+                    schedule.update(upcoming_schedule)
+                    print(f"\n  💡 Total: {game_counter} games over the next 7 days")
+                    print(f"  💡 Type a game ID (e.g., U1) to analyze any upcoming matchup.")
+
+                print("=" * 75)
+                # Don't loop back to redraw — let user pick from combined schedule
+                print("-" * 75)
+                print("COMMANDS: [G#/U#] (Analyze) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
+                choice = input("Enter Command: ").upper()
+
+                if choice == 'Q':
+                    print("Shutting down. Good luck tonight, Johnny!")
+                    break
+                elif choice in schedule or choice == 'C':
+                    # Fall through to the analysis handler below
+                    pass
+                else:
+                    print("❌ Command not recognized.")
+                    continue
+
+            if choice in schedule or choice == 'C':
                 if choice == 'C':
                     custom_counter += 1
                     gid = f"C{custom_counter}"

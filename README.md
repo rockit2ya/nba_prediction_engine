@@ -10,7 +10,8 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 
 - **Situational Modeling:** Factors in Back-to-Back (B2B) fatigue and dynamic Home Court Advantage (HCA).
 - **Bayesian Star Tax:** Uses individual "On-Off" metrics weighted by official injury status (OUT, GTD, Doubtful).
-- **Live Scoreboard V3:** High-reliability connection to real-time game schedules and scores.
+- **Dual-Source Scoreboard:** Primary schedule via NBA ScoreboardV2 API with automatic ESPN web-scrape fallback — games load reliably even during All-Star breaks and off days.
+- **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research.
 - **Optimized Performance:** Multi-threaded API calls and persistent sessions for sub-2-second analysis.
 - **Kelly Criterion Integration:** Calculates conservative bankroll risk for every edge found.
 - **CLV Tracking:** Fetches live odds from The Odds API to measure Closing Line Value — the gold standard for proving real edge.
@@ -20,7 +21,8 @@ The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fi
 
 | File/Folder                      | Purpose                                                                                                                                                                                |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nba_engine_ui.py`               | Main command-line interface for running the NBA analytics engine and interacting with users. Handles all user input, analysis, and logging. Supports graceful Ctrl+C exit.             |
+| `nba_engine_ui.py`               | Main command-line interface. Uses ScoreboardV2 (primary) + ESPN scrape (fallback) for schedule. Supports `[U]` upcoming games, `[G#]` analysis, `[C]` custom matchups, and graceful Ctrl+C exit. |
+| `schedule_scraper.py`            | Multi-source NBA schedule comparison tool. Scrapes ESPN and queries NBA APIs (scoreboardv3, ScoreboardV2, Live) to compare and validate game data. Also provides ESPN fallback for the UI. |
 | `nba_analytics.py`               | Core analytics logic and spread prediction. Bayesian Star Tax, late-scratch detection, fatigue adjustments. Reads from pre-fetched cache files.                                        |
 | `nba_data_fetcher_advanced.py`   | Selenium-based NBA.com advanced stats scraper. Used as a fallback if `nba_api` fails.                                                                                                  |
 | `injury_scraper.py`              | Scrapes CBS Sports for NBA injury data and caches to `nba_injuries.csv`.                                                                                                               |
@@ -58,7 +60,8 @@ Follow these steps to get the most out of the NBA Prediction Engine:
 
 2. **Analyze Games and Generate Recommendations**
    - Run the engine: `python nba_engine_ui.py`
-   - The UI displays today's NBA schedule from cached data.
+   - The UI displays today's NBA schedule via ScoreboardV2 (with ESPN fallback).
+   - Use `[U]` to browse the next 7 days of upcoming games and select any for analysis.
    - For each game, input the market line when prompted.
    - The engine calculates the fair line, edge, and confidence, factoring in:
      - Advanced stats (offensive/defensive ratings, pace)
@@ -95,9 +98,11 @@ Follow these steps to get the most out of the NBA Prediction Engine:
 
 This workflow ensures your predictions are based on the most current cached data, with built-in alerts for late-breaking news and injuries, and a clear audit trail for every bet.
 
-> **⏰ NBA API Scoreboard Timing:** The live scoreboard (`scoreboard.ScoreBoard()`) shows the **most recent completed slate** until the NBA rolls over to the next day's games, typically around **10–11am ET**. If you launch the engine early in the day, you'll see last night's final scores instead of tonight's upcoming games. This is normal NBA API behavior — not a bug.
+> **📡 Dual-Source Scoreboard:** The engine uses `ScoreboardV2` (NBA stats API) as the primary schedule source, which supports any date and populates reliably. If the NBA API is unreachable, it automatically falls back to scraping ESPN's schedule page. The source is displayed in the UI header (e.g., `📡 Source: NBA API` or `📡 Source: ESPN`).
 >
-> **💡 Use the `C` (Custom) command** to analyze any matchup immediately without waiting for the scoreboard to update. Just type `C`, enter the away and home team names, and the engine will run the full analysis using your cached stats, injuries, and rest data. This is the recommended workflow for early-day analysis or when the API is slow to refresh.
+> **📆 Upcoming Games:** Use the `[U]` command to browse the next 7 days of NBA games. Each game gets a selectable ID (e.g., `U1`, `U12`) so you can run pre-game analysis days in advance — great for planning bets before lines move.
+>
+> **💡 Custom Matchups:** Use `[C]` to analyze any matchup manually, even hypothetical ones. Just enter the away and home team names and the engine runs the full analysis using cached stats, injuries, and rest data.
 
 ---
 
