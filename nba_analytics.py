@@ -3,6 +3,7 @@ import os
 import csv
 import json
 from datetime import datetime
+from io import StringIO
 from nba_teams_static import get_teams, TEAM_ID_TO_NAME, TEAM_NAME_TO_ID
 import difflib
 
@@ -220,7 +221,6 @@ def get_rest_penalty(team_id):
     """Determines if a team is on a B2B."""
     # Use cached rest penalty data
     try:
-        import pandas as pd
         team_name = TEAM_ID_TO_NAME.get(team_id, None)
         if not team_name:
             return 0
@@ -231,7 +231,6 @@ def get_rest_penalty(team_id):
             return 0
         if lines[0].startswith('#'):
             lines = lines[1:]
-        from io import StringIO
         rest_df = pd.read_csv(StringIO(''.join(lines)))
         row = rest_df[rest_df['TEAM_NAME'] == team_name]
         if not row.empty:
@@ -297,7 +296,8 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     try:
         h_row = ratings[ratings['TEAM_NAME'] == h_team].iloc[0]
         a_row = ratings[ratings['TEAM_NAME'] == a_team].iloc[0]
-    except: raise Exception(f"Fuzzy match failed for {away_team} or {home_team}")
+    except (IndexError, KeyError):
+        raise Exception(f"Fuzzy match failed for {away_team} or {home_team}")
 
     # Load all cached situational data
     injuries = get_injuries()
@@ -384,8 +384,6 @@ def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, confidence='', be
     to_win = _calc_to_win(odds, bet_amount)
     if raw_edge is None:
         raw_edge = edge  # backward compat: if not supplied, raw == capped
-    import csv
-    import os
     rows = []
     header = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Raw_Edge','Edge_Capped','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
     prev_header_18 = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']

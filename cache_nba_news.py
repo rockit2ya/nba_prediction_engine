@@ -5,7 +5,6 @@
 import feedparser
 import json
 import signal
-import sys
 
 NEWS_FEED_URLS = [
     'https://www.espn.com/espn/rss/nba/news'

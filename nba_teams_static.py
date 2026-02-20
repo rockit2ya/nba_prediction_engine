@@ -53,7 +53,6 @@ def get_teams():
 TEAM_ID_TO_NAME = {t['id']: t['full_name'] for t in _NBA_TEAMS}
 TEAM_NAME_TO_ID = {t['full_name']: t['id'] for t in _NBA_TEAMS}
 NICKNAME_MAP = {t['nickname']: t for t in _NBA_TEAMS}
-ABBREV_MAP = {t['abbreviation']: t for t in _NBA_TEAMS}
 
 # Common aliases
 NICKNAME_ALIASES = {

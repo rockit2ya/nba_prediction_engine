@@ -9,10 +9,9 @@ Run standalone or via fetch_all_nba_data.sh:
 
 import json
 import os
-import sys
 from datetime import date, timedelta, datetime
 
-from schedule_scraper import scrape_espn, scrape_nba_com, normalize_team
+from schedule_scraper import scrape_espn, scrape_nba_com
 
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nba_schedule_cache.json')
 DAYS_AHEAD = 7  # today + 7 upcoming days

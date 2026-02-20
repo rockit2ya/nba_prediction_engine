@@ -975,7 +975,6 @@ def load_bankroll():
     """Load bankroll settings from bankroll.json."""
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), BANKROLL_FILE)
     if os.path.exists(path):
-        import json
         with open(path) as f:
             return json.load(f)
     return None
@@ -983,7 +982,6 @@ def load_bankroll():
 
 def save_bankroll(data):
     """Save bankroll settings to bankroll.json."""
-    import json
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), BANKROLL_FILE)
     with open(path, 'w') as f:
         json.dump(data, f, indent=2)

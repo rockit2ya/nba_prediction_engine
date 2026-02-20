@@ -60,7 +60,6 @@ def fetch_nba_advanced_stats():
             time.sleep(1)
         except Exception:
             log("No cookie/privacy popup found.")
-            pass  # No popup
 
         # Wait up to 30s for the stats table to appear
         table = WebDriverWait(driver, 30).until(
