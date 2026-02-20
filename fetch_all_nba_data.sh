@@ -69,15 +69,15 @@ if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache
   REST_COUNT=$(grep -Eo 'Cached rest penalty data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   NEWS_COUNT=$(grep -Eo 'Cached [0-9]+ NBA news items' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   ODDS_COUNT=$(grep -Eo 'Fetched [0-9]+ game' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
-  echo "  - NBA Team Stats: ${STATS_COUNT:-0} teams" | tee -a "$LOG"
-  echo "  - Injuries: ${INJURY_COUNT:-0} records" | tee -a "$LOG"
-  echo "  - Rest Penalty: ${REST_COUNT:-0} teams" | tee -a "$LOG"
-  echo "  - NBA News: ${NEWS_COUNT:-0} items" | tee -a "$LOG"
+  echo "  - NBA Team Stats: ${STATS_COUNT:-0} teams (NBA.com)" | tee -a "$LOG"
+  echo "  - Injuries: ${INJURY_COUNT:-0} records (CBS Sports)" | tee -a "$LOG"
+  echo "  - Rest Penalty: ${REST_COUNT:-0} teams (ESPN)" | tee -a "$LOG"
+  echo "  - NBA News: ${NEWS_COUNT:-0} items (ESPN)" | tee -a "$LOG"
   SCHED_COUNT=$(grep -Eo 'Cached [0-9]+ total games' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   STAR_TAX_COUNT=$(grep -Eo 'Cached star tax data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
-  echo "  - Odds (CLV): ${ODDS_COUNT:-0} games" | tee -a "$LOG"
-  echo "  - Schedule: ${SCHED_COUNT:-0} games (today + 7 days)" | tee -a "$LOG"
-  echo "  - Star Tax: ${STAR_TAX_COUNT:-0} teams" | tee -a "$LOG"
+  echo "  - Odds (CLV): ${ODDS_COUNT:-0} games (The Odds API)" | tee -a "$LOG"
+  echo "  - Schedule: ${SCHED_COUNT:-0} games (ESPN)" | tee -a "$LOG"
+  echo "  - Star Tax: ${STAR_TAX_COUNT:-0} teams (NBA.com)" | tee -a "$LOG"
   echo "" | tee -a "$LOG"
   echo "[COMPLETE] All NBA data cached successfully. Now run: python nba_engine_ui.py." | tee -a "$LOG"
 else
