@@ -344,55 +344,117 @@ def run_ui():
                 continue
 
             elif choice == 'U':
-                # ── Upcoming Games (next 7 days) ──
-                print("\n📆 UPCOMING NBA SCHEDULE")
-                print("=" * 75)
-                upcoming_schedule = {}
-                game_counter = 0
+                # ── Upcoming Games (next 7 days) — loops until user exits ──
+                while True:
+                    print("\n📆 UPCOMING NBA SCHEDULE")
+                    print("=" * 75)
+                    upcoming_schedule = {}
+                    game_counter = 0
 
-                for day_offset in range(1, 8):
-                    future_date = today + timedelta(days=day_offset)
-                    day_games, src = load_schedule_for_date(future_date)
-                    if not day_games:
+                    for day_offset in range(1, 8):
+                        future_date = today + timedelta(days=day_offset)
+                        day_games, src = load_schedule_for_date(future_date)
+                        if not day_games:
+                            continue
+
+                        day_label = future_date.strftime('%A, %B %-d')
+                        src_tag = f" ({src})" if src else ""
+                        print(f"\n  {day_label}{src_tag}")
+                        print(f"  {'-' * 65}")
+
+                        for away, home, status in day_games:
+                            game_counter += 1
+                            gid = f"U{game_counter}"
+                            upcoming_schedule[gid] = (away, home)
+                            print(f"  {gid:<5} {away:<24} @ {home:<24} {status}")
+
+                    if not upcoming_schedule:
+                        print("  No upcoming games found for the next 7 days.")
+                        break
+                    else:
+                        # Merge upcoming into schedule so user can analyze them
+                        schedule.update(upcoming_schedule)
+                        print(f"\n  💡 Total: {game_counter} games over the next 7 days")
+                        print(f"  💡 Type a game ID (e.g., U1) to analyze any upcoming matchup.")
+
+                    print("=" * 75)
+                    print("  Q. Back to main menu")
+                    print("-" * 75)
+                    u_choice = input("Enter U# to analyze (or Q to go back): ").upper().strip()
+
+                    if not u_choice or u_choice == 'Q':
+                        break
+
+                    if u_choice not in schedule:
+                        print("❌ Command not recognized.")
                         continue
 
-                    day_label = future_date.strftime('%A, %B %-d')
-                    src_tag = f" ({src})" if src else ""
-                    print(f"\n  {day_label}{src_tag}")
-                    print(f"  {'-' * 65}")
+                    # Inline analysis for the selected upcoming game
+                    u_away, u_home = schedule[u_choice]
+                    print(f"\n[PREVIEW] {u_away} vs {u_home} (upcoming game — research mode)")
+                    try:
+                        line_in = input(f"Market Line for {u_home} (e.g., -5.5): ").strip()
+                        if not line_in:
+                            print("❌ No market line entered. Returning to upcoming list.")
+                            continue
+                        try:
+                            market = float(line_in)
+                        except ValueError:
+                            print(f"❌ Invalid market line '{line_in}'. Must be a number (e.g., -5.5).")
+                            continue
 
-                    for away, home, status in day_games:
-                        game_counter += 1
-                        gid = f"U{game_counter}"
-                        upcoming_schedule[gid] = (away, home)
-                        print(f"  {gid:<5} {away:<24} @ {home:<24} {status}")
+                        fair_line, q_players, news, flag, star_tax_failed = predict_nba_spread(u_away, u_home)
+                        raw_edge = round(abs(fair_line - market), 2)
+                        EDGE_CAP = load_edge_cap()
+                        edge = min(raw_edge, EDGE_CAP)
+                        edge_capped = raw_edge > EDGE_CAP
+                        kelly = calculate_kelly(market, fair_line)
 
-                if not upcoming_schedule:
-                    print("  No upcoming games found for the next 7 days.")
-                else:
-                    # Merge upcoming into schedule so user can analyze them
-                    schedule.update(upcoming_schedule)
-                    print(f"\n  💡 Total: {game_counter} games over the next 7 days")
-                    print(f"  💡 Type a game ID (e.g., U1) to analyze any upcoming matchup.")
+                        conf = "HIGH"
+                        if star_tax_failed: conf = "MEDIUM (Star Tax API failed — injury impact unknown)"
+                        elif len(q_players) >= 2: conf = "LOW (High Injury Volatility)"
+                        elif len(q_players) == 1: conf = "MEDIUM"
 
-                print("=" * 75)
-                # Don't loop back to redraw — let user pick from combined schedule
-                print("-" * 75)
-                print("COMMANDS: [G#/U#] (Analyze) | [B] (Bets) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
-                choice = input("Enter Command: ").upper()
+                        print("\n" + "•"*45)
+                        print(f"PRO ENGINE LINE: {fair_line}")
+                        print(f"MARKET SPREAD:   {market}")
+                        if edge_capped:
+                            print(f"CALCULATED EDGE: {edge} pts (capped from {raw_edge})")
+                        else:
+                            print(f"CALCULATED EDGE: {edge} pts")
+                        print(f"KELLY SUGGESTION: Risk {kelly}% of Bankroll")
+                        print(f"MODEL CONFIDENCE: {conf}")
+                        print("•"*45)
 
-                if choice == 'Q':
-                    print("Shutting down. Happy Betting!")
-                    break
-                elif choice == 'B':
-                    display_bet_tracker()
-                    continue
-                elif choice in schedule or choice == 'C':
-                    # Fall through to the analysis handler below
-                    pass
-                else:
-                    print("❌ Command not recognized.")
-                    continue
+                        if edge_capped:
+                            print(f"⚠️  EDGE CAP HIT: Raw edge was {raw_edge} pts — model may be missing key info.")
+                            print(f"   → Large edges often mean the market knows something the model doesn't.")
+                            print(f"   → Investigate injuries, motivation, or lineup news before betting.")
+                        if q_players:
+                            print(f"⚠️  GTD/QUESTIONABLE: {', '.join(q_players)}")
+                        if flag:
+                            print(f"🚨 ALERT: Late-breaking lineup/injury news detected! Double-check before betting.")
+                        if star_tax_failed:
+                            print(f"⚠️  STAR TAX WARNING: Could not fetch player On/Off data. Injury impact NOT reflected in line.")
+                            print(f"   → Manually verify key player statuses before placing this bet.")
+
+                        recommendation = u_home if fair_line < market else u_away
+                        if edge_capped:
+                            print(f"🚨 REVIEW REQUIRED: {recommendation} (edge capped at {EDGE_CAP} — verify before betting)")
+                        elif edge >= 5 and "HIGH" in conf:
+                            print(f"🔥 STRONG SIGNAL: Bet {recommendation}")
+                        elif edge >= 3:
+                            print(f"📊 LEAN: {recommendation} (moderate edge)")
+                        else:
+                            print(f"📉 LOW EDGE: {recommendation} (thin margin — proceed with caution)")
+
+                        print("\n  📋 PREVIEW ONLY — This is an upcoming game.")
+                        print("     Data may change by game day (injuries, lines, rest).")
+                        print("     Re-analyze on game day to log a bet.")
+                    except Exception as e:
+                        print(f"❌ Error during analysis: {e}")
+                # done with U loop
+                continue
 
             if choice in schedule or choice == 'C':
                 is_upcoming = choice.startswith('U')
