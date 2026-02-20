@@ -152,6 +152,7 @@ def display_bet_tracker():
 
     if not all_rows:
         print("\n  📭 No bets found in the selected tracker(s).")
+        input("\n  Press Enter to return to the main menu...")
         return
 
     # ── Display formatted table ──
@@ -230,6 +231,7 @@ def display_bet_tracker():
           f"Net P&L: {net_color} ${net:+.2f} | "
           f"ROI: {roi:+.1f}%")
     print("=" * 110)
+    input("\n  Press Enter to return to the main menu...")
 
 
 STALE_THRESHOLD_HOURS = int(os.environ.get('STALE_HOURS', 12))
