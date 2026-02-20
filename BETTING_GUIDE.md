@@ -5,10 +5,18 @@
 ### 1. Fetch Fresh Data
 
 ```bash
-./fetch_all_nba_data.sh
+./fetch_all_nba_data.sh              # Fetch ALL feeds (morning routine)
+./fetch_all_nba_data.sh odds         # Just odds (pre-tipoff CLV snapshot)
+./fetch_all_nba_data.sh injuries     # Just injuries (late scratch check)
+./fetch_all_nba_data.sh news         # Just news + lineup monitor
+./fetch_all_nba_data.sh stats        # Just team advanced stats
+./fetch_all_nba_data.sh schedule     # Just schedule prefetch
+./fetch_all_nba_data.sh rest         # Just rest penalty data
+./fetch_all_nba_data.sh startax      # Just star tax (On/Off plus-minus)
+./fetch_all_nba_data.sh odds,injuries # Comma-separated combo
 ```
 
-This runs all scrapers (team stats, injuries, rest penalties, news, and live odds) and caches the results locally.
+With no argument, this runs all scrapers (team stats, injuries, rest penalties, news, schedule, star tax, and live odds) and caches the results locally. Pass a feed name (or comma-separated list) to refresh only specific data — ideal for quick pre-tipoff updates without re-running the full pipeline.
 
 ### 2. Run the Prediction Engine
 
@@ -18,28 +26,66 @@ python nba_engine_ui.py
 
 The interactive UI will:
 
-1. ✅ Display today's NBA games (ScoreboardV2 primary, ESPN scrape fallback)
-2. ✅ Let you select a matchup to analyze
-3. ✅ Calculate fair lines from team efficiency, injuries, rest, and pace
-4. ✅ Compare against the market line you enter
-5. ✅ Show edge, Kelly sizing, and confidence level
-6. ✅ Display a **bet recommendation** with signal tier (🔥 Strong / 📊 Lean / 📉 Low Edge / 🚨 Extreme)
-7. ✅ Prompt for **Pick** (accept recommendation or override), **Bet Type** (Spread/ML/O-U), **Sportsbook**, **Odds**, and **Bet amount**
-8. ✅ Auto-calculate **ToWin** from your odds and stake
-9. ✅ Auto-record **Timestamp** and **Confidence** grade
-10. ✅ Log everything to `bet_tracker_YYYY-MM-DD.csv`
+1. ✅ Display today's NBA games with **bet status** (🎫 = bet placed) and **per-window CLV freshness**
+2. ✅ Show actionable fetch reminders for each tip-off window (e.g., "Run at ~6:45 PM: ./fetch_all_nba_data.sh odds,injuries")
+3. ✅ Let you select a matchup to analyze
+4. ✅ Calculate fair lines from team efficiency, injuries, rest, and pace
+5. ✅ Compare against the market line you enter
+6. ✅ Show edge, Kelly sizing, and confidence level
+7. ✅ Display a **bet recommendation** with signal tier (🔥 Strong / 📊 Lean / 📉 Low Edge / 🚨 Extreme)
+8. ✅ Prompt for **Pick** (accept recommendation or override), **Bet Type** (Spread/ML/O-U), **Sportsbook**, **Odds**, and **Bet amount**
+9. ✅ Auto-calculate **ToWin** from your odds and stake
+10. ✅ Auto-record **Timestamp** and **Confidence** grade
+11. ✅ Log everything to `bet_tracker_YYYY-MM-DD.csv`
+
+**Dashboard Example:**
+
+```
+📡 Source: ESPN
+G1  Cleveland Cavaliers    @ Charlotte Hornets      7:00 PM  🎫
+G2  Indiana Pacers         @ Washington Wizards     7:00 PM  🎫
+G3  Utah Jazz              @ Memphis Grizzlies      7:00 PM  🎫
+G4  Miami Heat             @ Atlanta Hawks           7:30 PM  🎫
+G5  Dallas Mavericks       @ Minnesota Timberwolves  7:30 PM
+G6  Milwaukee Bucks        @ New Orleans Pelicans    8:00 PM
+G7  Brooklyn Nets          @ Oklahoma City Thunder   8:00 PM
+G8  Los Angeles Clippers   @ Los Angeles Lakers     10:00 PM
+G9  Denver Nuggets         @ Portland Trail Blazers 10:00 PM
+  🎫 = Bet placed (4/9 games)
+
+  📈 7:00 PM (G1, G2, G3): CLV ⚠️  Fetched 10h ago
+     → Run at ~6:45 PM: ./fetch_all_nba_data.sh odds,injuries
+  📈 7:30 PM (G4, G5): CLV ⚠️  Fetched 10h ago
+     → Run at ~7:15 PM: ./fetch_all_nba_data.sh odds,injuries
+  📈 8:00 PM (G6, G7): CLV ⚠️  Fetched 10h ago
+     → Run at ~7:45 PM: ./fetch_all_nba_data.sh odds,injuries
+  📈 10:00 PM (G8, G9): CLV ⚠️  Fetched 10h ago
+     → Run at ~9:45 PM: ./fetch_all_nba_data.sh odds,injuries
+```
+
+**What the dashboard tells you:**
+
+| Indicator             | Meaning                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------- |
+| 🎫 (next to game)     | You already have a bet logged for this game                                            |
+| 🎫 = Bet placed (N/M) | N of M total games have bets — quickly see what's left                                 |
+| CLV ✅ Fresh          | Odds were fetched within 30 min of this window's tip-off — closing lines are locked in |
+| CLV ⚠️ Fetched Xh ago | Odds are stale for this window — run the suggested command before tip-off              |
+| CLV ❌ Not fetched    | No odds cached at all — you'll miss CLV data without a fetch                           |
+| → Run at ~TIME        | The exact time to run `./fetch_all_nba_data.sh odds,injuries` (15 min before tip)      |
 
 **Additional Commands:**
 
-| Command | Action |
-| ------- | ------ |
-| `G#`    | Analyze a today's game (e.g., `G1`, `G5`) — full analysis + bet logging |
-| `U`     | Browse upcoming games for the next 7 days (loops back after each analysis; `Q` to exit) |
-| `U#`    | Analyze an upcoming game (e.g., `U1`, `U12`) — **preview mode**, no bet logging |
+| Command | Action                                                                                             |
+| ------- | -------------------------------------------------------------------------------------------------- |
+| `G#`    | Analyze a today's game (e.g., `G1`, `G5`) — full analysis + bet logging                            |
+| `U`     | Browse upcoming games for the next 7 days (loops back after each analysis; `Q` to exit)            |
+| `U#`    | Analyze an upcoming game (e.g., `U1`, `U12`) — **preview mode**, no bet logging                    |
 | `B`     | View bet tracker history — select a day or all combined, see P&L summary (loops back; `Q` to exit) |
-| `C`     | Custom matchup — enter any two teams for analysis |
-| `R`     | Refresh all data caches (stats, injuries, news, rest, odds) |
-| `Q`     | Quit |
+| `P`     | Pre-Tipoff Review — compare fresh data against placed bets (injuries, line movement, action recs)  |
+| `C`     | Custom matchup — enter any two teams for analysis                                                  |
+| `R`     | Refresh all data caches (stats, injuries, news, rest, odds)                                        |
+| `Q`     | Quit                                                                                               |
 
 ### 3. After Games — Update Results
 
@@ -180,10 +226,25 @@ CLV measures whether you got a better number than the final market consensus at 
 
 **How it works:**
 
-1. `fetch_all_nba_data.sh` caches live spreads from 15+ sportsbooks (via The Odds API)
+1. `fetch_all_nba_data.sh odds` caches live spreads from 15+ sportsbooks (via The Odds API)
 2. You place your bet and the engine records your **Market Line**
 3. After games finish, `update_results.py` compares your line to the cached **Closing Line**
 4. **CLV = Closing Line − Your Market Line** → positive means you beat the market
+
+**Pre-Tipoff CLV Workflow:**
+
+To capture the best closing lines, run the odds-only fetch **as close to tip-off as possible**:
+
+| Scenario                  | Command                                 | When to run                |
+| ------------------------- | --------------------------------------- | -------------------------- |
+| Full morning refresh      | `./fetch_all_nba_data.sh`               | Morning (all feeds)        |
+| Pre-tipoff odds snapshot  | `./fetch_all_nba_data.sh odds`          | 10–15 min before first tip |
+| Late scratch + odds combo | `./fetch_all_nba_data.sh odds,injuries` | 10–15 min before first tip |
+| Late-window games only    | `./fetch_all_nba_data.sh odds`          | 10–15 min before late tips |
+
+For split slates (e.g., 7 PM ET + 10 PM ET tips), run `./fetch_all_nba_data.sh odds` twice — once before the early window and once before the late window — to get the tightest closing lines for each group.
+
+**You don't need to memorize this.** The engine dashboard automatically groups games by tip-off window and shows the exact time to run each fetch, with live CLV freshness status per window. Just follow the `→ Run at ~TIME` prompts.
 
 **Setup:** Copy `.env.example` to `.env` and add your free API key from [the-odds-api.com](https://the-odds-api.com). The engine works without it — CLV columns will simply be blank.
 
@@ -194,44 +255,54 @@ CLV measures whether you got a better number than the final market consensus at 
 ## ⚡ Betting Decision Flow
 
 ```
-1. RUN: fetch_all_nba_data.sh (fresh data)
-   ↓
-2. RUN: python nba_engine_ui.py
-   ↓
-3. Browse upcoming games with [U] — scout early
-   ↓
-4. Review HIGH EDGE games (5+ points, HIGH confidence)
-   ↓
-5. Enter market line → get recommendation
-   ↓
-6. Enter sportsbook, odds, bet amount
-   ↓
-7. Verify warm-ups 30 mins before game
-   ↓
-8. Check for late scratches
-   ↓
-9. Place bets at your sportsbook
-   ↓
-10. RUN: python update_results.py (after games)
-    ↓
-11. Review with [B] in engine or python post_mortem.py
+  ── MORNING ──────────────────────────────────────────────
+  1. RUN: ./fetch_all_nba_data.sh          (all feeds)
+     ↓
+  2. RUN: python nba_engine_ui.py
+     ↓
+  3. Browse upcoming games with [U] — scout early
+     ↓
+  4. Review HIGH EDGE games (5+ points, HIGH confidence)
+     ↓
+  5. Enter market line → get recommendation
+     ↓
+  6. Enter sportsbook, odds, bet amount
+
+  ── PRE-TIPOFF (10-15 min before first tip) ─────────────
+  7. RUN: ./fetch_all_nba_data.sh odds,injuries (CLV + late scratches)
+     ↓
+  8. RUN: [P] Pre-Tipoff Review in engine UI
+     → Shows injury changes, line movement, updated edge
+     → Action per bet: 🟢 HOLD / 🟡 REVIEW / 🔴 HEDGE
+     ↓
+  9. Act on recommendations — hold, hedge, or cash out
+     ↓
+ 10. Place any new bets at your sportsbook
+
+  ── LATE WINDOW (if split slate, e.g. 10 PM tips) ──────
+ 11. RUN: ./fetch_all_nba_data.sh odds     (2nd CLV snapshot)
+
+  ── AFTER GAMES ─────────────────────────────────────────
+ 12. RUN: python update_results.py         (scores + CLV)
+     ↓
+ 13. Review with [B] in engine or python post_mortem.py
 ```
 
 ---
 
 ## 📝 Key Files
 
-| File                         | Purpose                       | Update Frequency          |
-| ---------------------------- | ----------------------------- | ------------------------- |
-| `nba_injuries.csv`           | Player injury status          | Auto-scraped each run     |
-| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties        | Auto-scraped each run     |
-| `nba_stats_cache.json`       | Team efficiency ratings       | Auto-fetched each run     |
-| `odds_cache.json`            | Live spreads for CLV tracking | Auto-fetched each run     |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + real $ | Daily                     |
-| `schedule_scraper.py`        | Multi-source schedule tool    | On demand                 |
-| `bankroll.json`              | Bankroll config               | Set once, auto-maintained |
-| `.env`                       | API keys (Odds API)           | Set once                  |
-| `text_to_image.py`           | Terminal → PNG screenshot     | On demand                 |
+| File                         | Purpose                       | Update Frequency                   |
+| ---------------------------- | ----------------------------- | ---------------------------------- |
+| `nba_injuries.csv`           | Player injury status          | `./fetch_all_nba_data.sh injuries` |
+| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties        | `./fetch_all_nba_data.sh rest`     |
+| `nba_stats_cache.json`       | Team efficiency ratings       | `./fetch_all_nba_data.sh stats`    |
+| `odds_cache.json`            | Live spreads for CLV tracking | `./fetch_all_nba_data.sh odds`     |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + real $ | Daily                              |
+| `schedule_scraper.py`        | Multi-source schedule tool    | On demand                          |
+| `bankroll.json`              | Bankroll config               | Set once, auto-maintained          |
+| `.env`                       | API keys (Odds API)           | Set once                           |
+| `text_to_image.py`           | Terminal → PNG screenshot     | On demand                          |
 
 ---
 
@@ -256,12 +327,13 @@ This system factors in:
 
 1. **Only bet HIGH-SIGNAL games** — Edge ≥ 5 with HIGH confidence
 2. **Use Quarter-Kelly sizing** — never risk more than the bankroll tracker recommends
-3. **Update injuries before each session** — run `fetch_all_nba_data.sh`
+3. **Full refresh in the morning** — run `./fetch_all_nba_data.sh` (all feeds) once per session
 4. **Watch warm-ups** — subtle signs of player issues appear during shootaround
 5. **Monitor line movements** — if line moves 1+ point, something changed
 6. **Track everything** — enter Book, Odds, and Bet for real-dollar accountability (ToWin is auto-calculated)
-7. **Fetch odds before tip-off** — run `fetch_all_nba_data.sh` close to game time to cache the best closing lines for CLV
-8. **Review post-mortem weekly** — check if model edge and CLV are holding up
+7. **Fetch odds before tip-off** — run `./fetch_all_nba_data.sh odds` 10–15 min before tip to cache closing lines for CLV (run twice for split slates)
+8. **Late scratch check** — run `./fetch_all_nba_data.sh injuries` or `./fetch_all_nba_data.sh odds,injuries` pre-tip to catch last-minute lineup changes
+9. **Review post-mortem weekly** — check if model edge and CLV are holding up
 
 ---
 

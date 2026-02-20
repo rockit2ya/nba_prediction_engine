@@ -5,7 +5,7 @@ import json
 import subprocess
 import time
 from datetime import datetime, timedelta, date
-from nba_analytics import predict_nba_spread, log_bet, get_cache_times, calculate_pace_and_ratings
+from nba_analytics import predict_nba_spread, log_bet, get_cache_times, calculate_pace_and_ratings, get_injuries
 
 DEFAULT_EDGE_CAP = 10
 
@@ -118,10 +118,13 @@ def display_bet_tracker():
             header = rows[0]
             data = rows[1:]
             # Detect format by header length and map to unified dict
+            # Build a header-index map for flexible CLV/ClosingLine column lookup
+            hmap = {h.strip(): i for i, h in enumerate(header)}
             for row in data:
+                base = None
                 if len(header) >= 20 and len(row) >= 20:
                     # Current 20-col format
-                    all_rows.append({
+                    base = {
                         'id': row[0], 'time': row[1], 'away': row[2], 'home': row[3],
                         'fair': row[4], 'market': row[5], 'edge': row[6],
                         'kelly': row[9], 'conf': row[10], 'pick': row[11],
@@ -129,10 +132,10 @@ def display_bet_tracker():
                         'bet': row[15], 'to_win': row[16], 'result': row[17],
                         'payout': row[18], 'notes': row[19] if len(row) > 19 else '',
                         'file': os.path.basename(filepath)
-                    })
+                    }
                 elif len(header) >= 18 and len(row) >= 18:
                     # 18-col format
-                    all_rows.append({
+                    base = {
                         'id': row[0], 'time': row[1], 'away': row[2], 'home': row[3],
                         'fair': row[4], 'market': row[5], 'edge': row[6],
                         'kelly': row[7], 'conf': row[8], 'pick': row[9],
@@ -140,10 +143,10 @@ def display_bet_tracker():
                         'bet': row[13], 'to_win': row[14], 'result': row[15],
                         'payout': row[16], 'notes': row[17] if len(row) > 17 else '',
                         'file': os.path.basename(filepath)
-                    })
+                    }
                 elif len(header) >= 14 and len(row) >= 14:
                     # Old 14-col format
-                    all_rows.append({
+                    base = {
                         'id': row[0], 'time': '', 'away': row[1], 'home': row[2],
                         'fair': row[3], 'market': row[4], 'edge': row[5],
                         'kelly': row[6], 'conf': '', 'pick': row[7],
@@ -151,7 +154,14 @@ def display_bet_tracker():
                         'bet': row[10], 'to_win': '', 'result': row[11],
                         'payout': row[12], 'notes': row[13] if len(row) > 13 else '',
                         'file': os.path.basename(filepath)
-                    })
+                    }
+                if base:
+                    # Attach CLV columns if present (added by update_results.py)
+                    cl_idx = hmap.get('ClosingLine')
+                    clv_idx = hmap.get('CLV')
+                    base['closing_line'] = row[cl_idx].strip() if cl_idx is not None and cl_idx < len(row) else ''
+                    base['clv'] = row[clv_idx].strip() if clv_idx is not None and clv_idx < len(row) else ''
+                    all_rows.append(base)
 
         if not all_rows:
             print("\n  📭 No bets found in the selected tracker(s).")
@@ -159,10 +169,10 @@ def display_bet_tracker():
 
         # ── Display formatted table ──
         print(f"\n📊 BET TRACKER: {label}")
-        print("=" * 110)
+        print("=" * 120)
         id_w = 16 if len(selected_files) > 1 else 5
-        print(f"  {'ID':<{id_w}} {'Matchup':<30} {'Pick':<14} {'Edge':<7} {'Odds':<7} {'Bet':>7} {'Result':<8} {'Payout':>8}")
-        print(f"  {'-'*id_w} {'-'*30} {'-'*14} {'-'*7} {'-'*7} {'-'*7:>7} {'-'*8} {'-'*8:>8}")
+        print(f"  {'ID':<{id_w}} {'Matchup':<30} {'Pick':<14} {'Edge':<7} {'Odds':<7} {'Bet':>7} {'Result':<8} {'Payout':>8}  {'CLV':<10}")
+        print(f"  {'-'*id_w} {'-'*30} {'-'*14} {'-'*7} {'-'*7} {'-'*7:>7} {'-'*8} {'-'*8:>8}  {'-'*10}")
 
         total_wagered = 0.0
         total_payout = 0.0
@@ -205,6 +215,24 @@ def display_bet_tracker():
             odds_str = r['odds'] if r['odds'] else '-'
             edge_str = r['edge'] if r['edge'] else '-'
 
+            # CLV display: show value with indicator, or pending status
+            clv_raw = r.get('clv', '')
+            if clv_raw:
+                try:
+                    clv_val = float(clv_raw)
+                    if clv_val > 0:
+                        clv_display = f"✅ +{clv_val:.1f}"
+                    elif clv_val < 0:
+                        clv_display = f"❌ {clv_val:.1f}"
+                    else:
+                        clv_display = "➡️  0.0"
+                except ValueError:
+                    clv_display = clv_raw
+            elif result_str == 'PENDING':
+                clv_display = "⏳ Pending"
+            else:
+                clv_display = "—  N/A"
+
             # File tag when showing combined
             file_id = r['id']
             if len(selected_files) > 1:
@@ -212,14 +240,14 @@ def display_bet_tracker():
                 date_part = r['file'].replace('bet_tracker_', '').replace('.csv', '')
                 file_id = f"{date_part}/{r['id']}"
 
-            print(f"  {file_id:<{id_w}} {matchup:<30} {r['pick']:<14} {edge_str:<7} {odds_str:<7} {bet_str:>7} {result_display:<8} {payout_str:>8}")
+            print(f"  {file_id:<{id_w}} {matchup:<30} {r['pick']:<14} {edge_str:<7} {odds_str:<7} {bet_str:>7} {result_display:<8} {payout_str:>8}  {clv_display}")
 
             # Show notes if present
             if r['notes']:
                 print(f"  {' ' * id_w} 📝 {r['notes']}")
 
         # ── Summary ──
-        print("=" * 110)
+        print("=" * 120)
         total_bets = wins + losses + pending
         net = total_payout
         win_rate = (wins / (wins + losses) * 100) if (wins + losses) > 0 else 0.0
@@ -232,7 +260,253 @@ def display_bet_tracker():
         print(f"  💰 Wagered: ${total_wagered:.0f} | "
               f"Net P&L: {net_color} ${net:+.2f} | "
               f"ROI: {roi:+.1f}%")
-        print("=" * 110)
+
+        # CLV summary
+        clv_values = []
+        clv_missing = 0
+        for r in all_rows:
+            clv_raw = r.get('clv', '')
+            if clv_raw:
+                try:
+                    clv_values.append(float(clv_raw))
+                except ValueError:
+                    pass
+            elif r.get('result', '') != 'PENDING':
+                clv_missing += 1
+        if clv_values:
+            avg_clv = sum(clv_values) / len(clv_values)
+            pos_clv = sum(1 for v in clv_values if v > 0)
+            clv_color = '🟢' if avg_clv >= 0 else '🔴'
+            print(f"  📈 CLV: {clv_color} Avg {avg_clv:+.1f} | "
+                  f"Positive: {pos_clv}/{len(clv_values)} ({pos_clv/len(clv_values)*100:.0f}%)"
+                  f"{f' | {clv_missing} bets missing CLV' if clv_missing else ''}")
+        elif pending == total_bets:
+            print(f"  📈 CLV: ⏳ All bets pending — run ./fetch_all_nba_data.sh odds before tip-off, then update_results.py after")
+        elif clv_missing:
+            print(f"  📈 CLV: ⚠️  {clv_missing} decided bet{'s' if clv_missing != 1 else ''} missing CLV — were odds fetched before tip-off?")
+        print("=" * 120)
+
+
+# ── Pre-Tipoff Review ────────────────────────────────────────────────────
+def display_pretipoff_review():
+    """Compare fresh post-fetch data against placed bets.
+    Shows injury changes, line movement, updated edge, and action suggestions."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    today = date.today()
+    tracker_path = os.path.join(base_dir, f"bet_tracker_{today.isoformat()}.csv")
+
+    if not os.path.exists(tracker_path):
+        print("\n  📭 No bets placed today — nothing to review.")
+        print("     Analyze a game first with [G#] then come back here.")
+        return
+
+    # ── 1. Load today's bets ─────────────────────────────────────────────
+    bets = []
+    with open(tracker_path, 'r', newline='') as f:
+        reader = csv.reader(f)
+        header = next(reader, None)
+        if not header:
+            print("\n  📭 Bet tracker is empty.")
+            return
+        hmap = {h.strip(): i for i, h in enumerate(header)}
+        for row in reader:
+            if not row or len(row) < 12:
+                continue
+            bets.append({
+                'gid': row[hmap.get('ID', 0)].strip(),
+                'away': row[hmap.get('Away', 2)].strip(),
+                'home': row[hmap.get('Home', 3)].strip(),
+                'fair_orig': float(row[hmap.get('Fair', 4)]) if row[hmap.get('Fair', 4)] else 0.0,
+                'market_orig': float(row[hmap.get('Market', 5)]) if row[hmap.get('Market', 5)] else 0.0,
+                'edge_orig': float(row[hmap.get('Edge', 6)]) if row[hmap.get('Edge', 6)] else 0.0,
+                'pick': row[hmap.get('Pick', 11)].strip(),
+                'timestamp': row[hmap.get('Timestamp', 1)].strip(),
+            })
+
+    if not bets:
+        print("\n  📭 No valid bets found in today's tracker.")
+        return
+
+    # ── 2. Load current odds cache ───────────────────────────────────────
+    odds_data = {}
+    odds_fetch_time = None
+    odds_path = os.path.join(base_dir, 'odds_cache.json')
+    try:
+        if os.path.exists(odds_path):
+            with open(odds_path, 'r') as f:
+                raw = json.load(f)
+            odds_data = raw.get('games', {})
+            for gdata in odds_data.values():
+                fa = gdata.get('fetched_at', '')
+                if fa:
+                    try:
+                        ts = datetime.fromisoformat(fa.replace('Z', '+00:00'))
+                        if odds_fetch_time is None or ts > odds_fetch_time:
+                            odds_fetch_time = ts
+                    except ValueError:
+                        pass
+    except (IOError, json.JSONDecodeError):
+        pass
+
+    # Human-friendly odds timestamp
+    odds_age_str = "unknown"
+    if odds_fetch_time:
+        try:
+            local_ft = odds_fetch_time.astimezone().replace(tzinfo=None)
+        except Exception:
+            local_ft = odds_fetch_time.replace(tzinfo=None)
+        mins_ago = (datetime.now() - local_ft).total_seconds() / 60
+        if mins_ago < 60:
+            odds_age_str = f"{int(mins_ago)}m ago"
+        else:
+            odds_age_str = f"{int(mins_ago // 60)}h {int(mins_ago % 60)}m ago"
+
+    # ── 3. Load current injuries ─────────────────────────────────────────
+    current_injuries = get_injuries()  # {team_full_name: [player_dicts]}
+
+    # ── 4. Display review header ─────────────────────────────────────────
+    print("\n" + "=" * 80)
+    print(f"  🔍 PRE-TIPOFF REVIEW | {today.strftime('%B %d, %Y')}")
+    print(f"  📊 Reviewing {len(bets)} placed bet{'s' if len(bets) != 1 else ''} against fresh data")
+    print(f"  📈 Odds cache: {odds_age_str}")
+    print("=" * 80)
+
+    EDGE_CAP = load_edge_cap()
+    action_summary = {'HOLD': 0, 'HEDGE': 0, 'REVIEW': 0}
+
+    for bet in bets:
+        away, home = bet['away'], bet['home']
+        matchup_key = None
+        # Build lookup keys that match odds_cache.json format ("Team @ Team")
+        for key in odds_data:
+            # odds_cache uses short names like "Pacers @ Wizards" or full names
+            k_lower = key.lower()
+            if (away.lower().split()[-1] in k_lower and home.lower().split()[-1] in k_lower):
+                matchup_key = key
+                break
+
+        print(f"\n  {'─' * 72}")
+        print(f"  {bet['gid']}  {away} @ {home}")
+        print(f"  Bet: {bet['pick']} | Placed at {bet['timestamp']}")
+        print(f"  {'─' * 72}")
+
+        # ── Injury changes ───────────────────────────────────────────────
+        away_inj = current_injuries.get(away, [])
+        home_inj = current_injuries.get(home, [])
+        out_players = []
+        gtd_players = []
+        for p in away_inj + home_inj:
+            status = (p.get('status', '') or '').lower()
+            team_short = away.split()[-1] if p in away_inj else home.split()[-1]
+            label = f"{p['name']} ({team_short})"
+            if 'out' in status:
+                out_players.append(label)
+            elif 'game time' in status or 'questionable' in status or 'doubtful' in status or 'day-to-day' in status:
+                gtd_players.append(label)
+
+        if out_players:
+            print(f"  🚑 OUT: {', '.join(out_players)}")
+        if gtd_players:
+            print(f"  ⚠️  GTD/Q: {', '.join(gtd_players)}")
+        if not out_players and not gtd_players:
+            print(f"  ✅ Injuries: No significant changes")
+
+        # ── Line movement ────────────────────────────────────────────────
+        current_market = None
+        if matchup_key and matchup_key in odds_data:
+            try:
+                current_market = float(odds_data[matchup_key].get('consensus_line', ''))
+            except (ValueError, TypeError):
+                pass
+
+        line_moved = False
+        if current_market is not None:
+            movement = round(current_market - bet['market_orig'], 1)
+            if abs(movement) >= 0.5:
+                direction = "toward your pick ✅" if (
+                    (bet['pick'] == home and movement < 0) or
+                    (bet['pick'] == away and movement > 0) or
+                    (bet['pick'] != home and bet['pick'] != away and False)
+                ) else "against your pick ⚠️"
+                print(f"  📉 Line moved: {bet['market_orig']} → {current_market} ({movement:+.1f}, {direction})")
+                line_moved = True
+            else:
+                print(f"  📈 Line: {bet['market_orig']} → {current_market} (stable)")
+        else:
+            print(f"  📈 Line: {bet['market_orig']} (current market unavailable)")
+
+        # ── Updated edge recalculation ───────────────────────────────────
+        new_fair = None
+        new_edge = None
+        try:
+            fair_result = predict_nba_spread(away, home)
+            new_fair = fair_result[0]
+            market_for_edge = current_market if current_market is not None else bet['market_orig']
+            raw_new_edge = round(abs(new_fair - market_for_edge), 2)
+            new_edge = min(raw_new_edge, EDGE_CAP)
+            fair_change = round(new_fair - bet['fair_orig'], 1)
+
+            print(f"  🧮 Fair line: {bet['fair_orig']} → {new_fair}"
+                  f" ({fair_change:+.1f})" if abs(fair_change) >= 0.1 else
+                  f"  🧮 Fair line: {new_fair} (unchanged)")
+            print(f"  📐 Edge: {bet['edge_orig']} → {new_edge} pts"
+                  f" (was {bet['edge_orig']}, now {new_edge})")
+        except Exception as e:
+            print(f"  🧮 Edge recalc failed: {e}")
+
+        # ── Action suggestion ────────────────────────────────────────────
+        action = "HOLD"
+        reason = ""
+
+        if new_edge is not None:
+            edge_delta = new_edge - bet['edge_orig']
+
+            if new_edge >= bet['edge_orig']:
+                action = "HOLD"
+                reason = "Edge improved or stable"
+                if new_edge > bet['edge_orig'] + 1:
+                    reason = f"Edge grew +{edge_delta:.1f} pts — consider adding"
+            elif new_edge >= 1.0:
+                action = "HOLD"
+                reason = f"Edge narrowed to {new_edge} but still positive"
+            elif new_edge < 1.0 and out_players:
+                action = "HEDGE"
+                reason = f"Edge collapsed to {new_edge} + key player(s) OUT"
+            elif new_edge < 1.0:
+                action = "REVIEW"
+                reason = f"Edge < 1 pt ({new_edge}) — thin margin"
+
+            # Override: major injury to betted team's key player
+            betted_team_inj = home_inj if bet['pick'] == home else away_inj
+            major_outs = [p for p in betted_team_inj if 'out' in (p.get('status', '') or '').lower()]
+            if major_outs and new_edge < bet['edge_orig']:
+                if action != "HEDGE":
+                    action = "REVIEW"
+                    reason = f"Key player OUT on {bet['pick']}: {major_outs[0]['name']}"
+        else:
+            action = "HOLD"
+            reason = "Unable to recalculate — no data change detected"
+
+        # Action display
+        action_icons = {'HOLD': '🟢', 'HEDGE': '🔴', 'REVIEW': '🟡'}
+        icon = action_icons.get(action, '⚪')
+        print(f"\n  {icon} ACTION: {action}")
+        print(f"     {reason}")
+        action_summary[action] = action_summary.get(action, 0) + 1
+
+    # ── Overall summary ──────────────────────────────────────────────────
+    print(f"\n{'=' * 80}")
+    holds = action_summary.get('HOLD', 0)
+    hedges = action_summary.get('HEDGE', 0)
+    reviews = action_summary.get('REVIEW', 0)
+    print(f"  📋 SUMMARY: {holds} HOLD | {reviews} REVIEW | {hedges} HEDGE/CASH OUT")
+    if hedges:
+        print(f"  🔴 {hedges} bet{'s' if hedges != 1 else ''} flagged for hedging — check injury/line details above")
+    if reviews:
+        print(f"  🟡 {reviews} bet{'s' if reviews != 1 else ''} need manual review — edge is thin or situation changed")
+    if holds == len(bets):
+        print(f"  🟢 All bets look solid — no action needed before tip-off")
+    print(f"{'=' * 80}")
 
 
 STALE_THRESHOLD_HOURS = int(os.environ.get('STALE_HOURS', 12))
@@ -302,19 +576,124 @@ def run_ui():
             today = date.today()
             games, source = load_schedule_for_date(today)
 
+            # ── Load today's bets & odds cache for dashboard status ──
+            bets_placed = set()  # set of GIDs that have bets logged
+            bet_tracker_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                            f"bet_tracker_{today.isoformat()}.csv")
+            if os.path.exists(bet_tracker_path):
+                try:
+                    with open(bet_tracker_path, 'r', newline='') as bf:
+                        reader = csv.reader(bf)
+                        header = next(reader, None)
+                        for row in reader:
+                            if row:
+                                bets_placed.add(row[0].strip().upper())
+                except (IOError, StopIteration):
+                    pass
+
+            odds_cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'odds_cache.json')
+            odds_fetch_time = None   # most recent odds fetch as local datetime
+            try:
+                if os.path.exists(odds_cache_path):
+                    with open(odds_cache_path, 'r') as of:
+                        odds_data = json.load(of)
+                    # Find the most recent fetched_at timestamp across all cached games
+                    for gdata in odds_data.get('games', {}).values():
+                        fa = gdata.get('fetched_at', '')
+                        if fa:
+                            try:
+                                ts = datetime.fromisoformat(fa.replace('Z', '+00:00'))
+                                if odds_fetch_time is None or ts > odds_fetch_time:
+                                    odds_fetch_time = ts
+                            except ValueError:
+                                pass
+            except (IOError, json.JSONDecodeError, KeyError):
+                pass
+
             if games:
                 if source:
                     print(f"📡 Source: {source}")
+
+                # ── Group games into tip-off windows ──
+                game_windows = {}  # time_str → [list of GIDs]
                 for i, (away, home, status) in enumerate(games):
                     gid = f"G{i+1}"
                     schedule[gid] = (away, home)
-                    print(f"{gid:<4} {away:<24} @ {home:<24} {status}")
+                    time_str = status.strip() if status.strip() else "TBD"
+                    game_windows.setdefault(time_str, []).append(gid)
+                    bet_tag = " 🎫" if gid in bets_placed else ""
+                    print(f"{gid:<4} {away:<24} @ {home:<24} {status}{bet_tag}")
+
+                # ── Legend ──
+                if bets_placed:
+                    bet_count = sum(1 for g in schedule if g in bets_placed)
+                    total_games = len(schedule)
+                    print(f"  🎫 = Bet placed ({bet_count}/{total_games} games)")
+
+                # ── Per-window CLV & injury fetch schedule ──
+                print("")
+                now = datetime.now()
+                has_any_upcoming = False
+
+                # Parse each window's tip-off as a datetime for comparison
+                window_infos = []  # (tip_datetime, time_str, gids)
+                for time_str, gids in game_windows.items():
+                    tip_dt = None
+                    if time_str != "TBD":
+                        try:
+                            tip_dt = datetime.combine(today, datetime.strptime(time_str, "%I:%M %p").time())
+                        except ValueError:
+                            pass
+                    window_infos.append((tip_dt, time_str, gids))
+                # Sort by tip-off time (TBD last)
+                window_infos.sort(key=lambda x: x[0] or datetime.max)
+
+                for tip_dt, time_str, gids in window_infos:
+                    gid_label = ", ".join(gids)
+                    if tip_dt is None:
+                        print(f"  📈 {time_str} ({gid_label}): ⚠️  Tip-off TBD — fetch odds & injuries once time is set")
+                        continue
+
+                    fetch_target = tip_dt - timedelta(minutes=15)
+                    fetch_time_str = fetch_target.strftime("%-I:%M %p")
+
+                    # Determine if odds are fresh for THIS window (fetched within 30 min of tip)
+                    odds_status = "❌ Not fetched"
+                    if odds_fetch_time:
+                        # Convert odds_fetch_time to local naive for comparison
+                        try:
+                            local_fetch = odds_fetch_time.astimezone().replace(tzinfo=None)
+                        except Exception:
+                            local_fetch = odds_fetch_time.replace(tzinfo=None)
+                        mins_before_tip = (tip_dt - local_fetch).total_seconds() / 60
+                        if 0 <= mins_before_tip <= 30:
+                            odds_status = "✅ Fresh"
+                        elif mins_before_tip < 0:
+                            # Fetched after tip-off
+                            odds_status = "✅ Fetched post-tip"
+                        else:
+                            hours_ago = (now - local_fetch).total_seconds() / 3600
+                            if hours_ago < 1:
+                                odds_status = f"⚠️  Fetched {int(hours_ago * 60)}m ago"
+                            else:
+                                odds_status = f"⚠️  Fetched {int(hours_ago)}h ago"
+
+                    if now < tip_dt:
+                        has_any_upcoming = True
+                        print(f"  📈 {time_str} ({gid_label}): CLV {odds_status}")
+                        print(f"     → Run at ~{fetch_time_str}: ./fetch_all_nba_data.sh odds,injuries")
+                    else:
+                        # Game already tipped off
+                        print(f"  📈 {time_str} ({gid_label}): CLV {odds_status} (in progress)")
+
+                if not has_any_upcoming and odds_fetch_time:
+                    print(f"  📈 All games in progress or finished")
             else:
                 print("📅 No games scheduled today (All-Star break or off day).")
                 print("💡 TIP: Type 'U' to view upcoming games, or 'C' for a custom matchup.")
 
             print("-" * 75)
-            print("COMMANDS: [G#] (Analyze) | [U] (Upcoming) | [B] (Bets) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
+            print("COMMANDS: [G#] (Analyze) | [P] (Pre-Tip Review) | [B] (Bets) | [U] (Upcoming) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
             choice = input("Enter Command: ").upper()
 
             if choice == 'Q':
@@ -323,6 +702,10 @@ def run_ui():
 
             elif choice == 'B':
                 display_bet_tracker()
+                continue
+
+            elif choice == 'P':
+                display_pretipoff_review()
                 continue
 
             elif choice == 'R':
