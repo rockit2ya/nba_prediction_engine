@@ -30,8 +30,8 @@ The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-
 - **Multi-Source Data Pipeline:** ESPN (schedule, scores, news, rest), NBA.com (team advanced stats, player NET_RATING), CBS Sports (injuries), The Odds API (spreads/CLV).
 - **Situational Modeling:** Factors in Back-to-Back (B2B) fatigue and dynamic Home Court Advantage (HCA).
 - **Bayesian Star Tax:** Uses individual NET_RATING metrics weighted by official injury status (OUT, GTD, Doubtful).
-- **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research. Upcoming games run in **preview mode** (no bet logging) to encourage re-analysis with fresh data on game day.
-- **Bet Tracker Viewer:** `[B]` command displays a formatted table of all bets from any tracker file (or all combined), with per-bet details and a P&L summary including record, win rate, net profit, and ROI.
+- **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research. Upcoming games run in **preview mode** (no bet logging) to encourage re-analysis with fresh data on game day. After each analysis, the upcoming list redisplays so you can analyze another game. Press `Q` to return to the main menu.
+- **Bet Tracker Viewer:** `[B]` command displays a formatted table of all bets from any tracker file (or all combined), with per-bet details and a P&L summary including record, win rate, net profit, and ROI. After viewing, the tracker list redisplays so you can pick another. Press `Q` to return to the main menu.
 - **Optimized Performance:** All analysis runs on local cached data — no network latency, no retries.
 - **Kelly Criterion Integration:** Calculates conservative bankroll risk for every edge found.
 - **CLV Tracking:** Fetches live odds from The Odds API to measure Closing Line Value — the gold standard for proving real edge.

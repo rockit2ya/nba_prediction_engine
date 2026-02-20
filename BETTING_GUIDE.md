@@ -34,9 +34,9 @@ The interactive UI will:
 | Command | Action |
 | ------- | ------ |
 | `G#`    | Analyze a today's game (e.g., `G1`, `G5`) — full analysis + bet logging |
-| `U`     | Browse upcoming games for the next 7 days |
+| `U`     | Browse upcoming games for the next 7 days (loops back after each analysis; `Q` to exit) |
 | `U#`    | Analyze an upcoming game (e.g., `U1`, `U12`) — **preview mode**, no bet logging |
-| `B`     | View bet tracker history — select a day or all combined, see P&L summary |
+| `B`     | View bet tracker history — select a day or all combined, see P&L summary (loops back; `Q` to exit) |
 | `C`     | Custom matchup — enter any two teams for analysis |
 | `R`     | Refresh all data caches (stats, injuries, news, rest, odds) |
 | `Q`     | Quit |
@@ -120,6 +120,7 @@ Use the `[B]` command inside the engine UI to review your betting history withou
 2. Select a tracker by number, or `A` to view all combined
 3. Displays a formatted table with: matchup, pick, edge, odds, bet amount, result (✅/❌/⏳), payout, and notes
 4. Shows a **P&L summary**: record, win rate, total wagered, net profit/loss, and ROI
+5. Loops back to the tracker list so you can pick another — press `Q` or Enter to return to the main menu
 
 The combined view prefixes each bet ID with the tracker date (e.g., `2026-02-11/G3`) for easy cross-referencing.
 
