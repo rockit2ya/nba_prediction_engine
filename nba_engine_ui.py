@@ -66,172 +66,173 @@ def load_schedule_for_date(target_date):
 
 
 def display_bet_tracker():
-    """List available bet tracker CSVs, let user pick one, and display a formatted summary."""
+    """List available bet tracker CSVs, let user pick one, and display a formatted summary.
+    Loops back to the tracker list after each display until user presses Enter or Q."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    files = sorted(glob.glob(os.path.join(base_dir, 'bet_tracker_*.csv')))
 
-    if not files:
-        print("\n  📭 No bet tracker files found.")
-        return
+    while True:
+        files = sorted(glob.glob(os.path.join(base_dir, 'bet_tracker_*.csv')))
 
-    print("\n📒 AVAILABLE BET TRACKERS")
-    print("=" * 55)
-    for i, f in enumerate(files, 1):
-        fname = os.path.basename(f)
-        # Count rows (excluding header)
-        with open(f, 'r') as fh:
-            row_count = max(0, sum(1 for _ in fh) - 1)
-        print(f"  {i}. {fname}  ({row_count} bet{'s' if row_count != 1 else ''})")
-    print(f"  A. All trackers combined")
-    print("=" * 55)
-
-    pick = input("Select tracker # (or A for all, Enter to cancel): ").strip().upper()
-    if not pick:
-        return
-
-    if pick == 'A':
-        selected_files = files
-        label = "ALL TRACKERS COMBINED"
-    else:
-        try:
-            idx = int(pick) - 1
-            if idx < 0 or idx >= len(files):
-                print("❌ Invalid selection.")
-                return
-            selected_files = [files[idx]]
-            label = os.path.basename(files[idx])
-        except ValueError:
-            print("❌ Invalid selection.")
+        if not files:
+            print("\n  📭 No bet tracker files found.")
             return
 
-    # Read and normalize all rows from selected files
-    all_rows = []
-    for filepath in selected_files:
-        with open(filepath, 'r', newline='') as f:
-            reader = csv.reader(f)
-            rows = list(reader)
-        if not rows:
-            continue
-        header = rows[0]
-        data = rows[1:]
-        # Detect format by header length and map to unified dict
-        for row in data:
-            if len(header) >= 20 and len(row) >= 20:
-                # Current 20-col format
-                all_rows.append({
-                    'id': row[0], 'time': row[1], 'away': row[2], 'home': row[3],
-                    'fair': row[4], 'market': row[5], 'edge': row[6],
-                    'kelly': row[9], 'conf': row[10], 'pick': row[11],
-                    'type': row[12], 'book': row[13], 'odds': row[14],
-                    'bet': row[15], 'to_win': row[16], 'result': row[17],
-                    'payout': row[18], 'notes': row[19] if len(row) > 19 else '',
-                    'file': os.path.basename(filepath)
-                })
-            elif len(header) >= 18 and len(row) >= 18:
-                # 18-col format
-                all_rows.append({
-                    'id': row[0], 'time': row[1], 'away': row[2], 'home': row[3],
-                    'fair': row[4], 'market': row[5], 'edge': row[6],
-                    'kelly': row[7], 'conf': row[8], 'pick': row[9],
-                    'type': row[10], 'book': row[11], 'odds': row[12],
-                    'bet': row[13], 'to_win': row[14], 'result': row[15],
-                    'payout': row[16], 'notes': row[17] if len(row) > 17 else '',
-                    'file': os.path.basename(filepath)
-                })
-            elif len(header) >= 14 and len(row) >= 14:
-                # Old 14-col format
-                all_rows.append({
-                    'id': row[0], 'time': '', 'away': row[1], 'home': row[2],
-                    'fair': row[3], 'market': row[4], 'edge': row[5],
-                    'kelly': row[6], 'conf': '', 'pick': row[7],
-                    'type': 'Spread', 'book': row[8], 'odds': row[9],
-                    'bet': row[10], 'to_win': '', 'result': row[11],
-                    'payout': row[12], 'notes': row[13] if len(row) > 13 else '',
-                    'file': os.path.basename(filepath)
-                })
+        print("\n📒 AVAILABLE BET TRACKERS")
+        print("=" * 55)
+        for i, f in enumerate(files, 1):
+            fname = os.path.basename(f)
+            with open(f, 'r') as fh:
+                row_count = max(0, sum(1 for _ in fh) - 1)
+            print(f"  {i}. {fname}  ({row_count} bet{'s' if row_count != 1 else ''})")
+        print(f"  A. All trackers combined")
+        print(f"  Q. Back to main menu")
+        print("=" * 55)
 
-    if not all_rows:
-        print("\n  📭 No bets found in the selected tracker(s).")
-        input("\n  Press Enter to return to the main menu...")
-        return
+        pick = input("Select tracker # (or A for all, Q to go back): ").strip().upper()
+        if not pick or pick == 'Q':
+            return
 
-    # ── Display formatted table ──
-    print(f"\n📊 BET TRACKER: {label}")
-    print("=" * 110)
-    id_w = 16 if len(selected_files) > 1 else 5
-    print(f"  {'ID':<{id_w}} {'Matchup':<30} {'Pick':<14} {'Edge':<7} {'Odds':<7} {'Bet':>7} {'Result':<8} {'Payout':>8}")
-    print(f"  {'-'*id_w} {'-'*30} {'-'*14} {'-'*7} {'-'*7} {'-'*7:>7} {'-'*8} {'-'*8:>8}")
-
-    total_wagered = 0.0
-    total_payout = 0.0
-    wins, losses, pending = 0, 0, 0
-
-    for r in all_rows:
-        matchup = f"{r['away']} @ {r['home']}"
-        if len(matchup) > 28:
-            matchup = matchup[:27] + '…'
-
-        result_str = r['result']
-        if result_str == 'WIN':
-            result_display = '✅ WIN'
-            wins += 1
-        elif result_str == 'LOSS':
-            result_display = '❌ LOSS'
-            losses += 1
-        elif result_str == 'PUSH':
-            result_display = '➡️  PUSH'
-            wins += 0  # neutral
+        if pick == 'A':
+            selected_files = files
+            label = "ALL TRACKERS COMBINED"
         else:
-            result_display = '⏳ PEND'
-            pending += 1
+            try:
+                idx = int(pick) - 1
+                if idx < 0 or idx >= len(files):
+                    print("❌ Invalid selection.")
+                    continue
+                selected_files = [files[idx]]
+                label = os.path.basename(files[idx])
+            except ValueError:
+                print("❌ Invalid selection.")
+                continue
 
-        # Parse numeric values
-        try:
-            bet_val = float(r['bet']) if r['bet'] else 0.0
-        except ValueError:
-            bet_val = 0.0
-        try:
-            payout_val = float(r['payout']) if r['payout'] else 0.0
-        except ValueError:
-            payout_val = 0.0
+        # Read and normalize all rows from selected files
+        all_rows = []
+        for filepath in selected_files:
+            with open(filepath, 'r', newline='') as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+            if not rows:
+                continue
+            header = rows[0]
+            data = rows[1:]
+            # Detect format by header length and map to unified dict
+            for row in data:
+                if len(header) >= 20 and len(row) >= 20:
+                    # Current 20-col format
+                    all_rows.append({
+                        'id': row[0], 'time': row[1], 'away': row[2], 'home': row[3],
+                        'fair': row[4], 'market': row[5], 'edge': row[6],
+                        'kelly': row[9], 'conf': row[10], 'pick': row[11],
+                        'type': row[12], 'book': row[13], 'odds': row[14],
+                        'bet': row[15], 'to_win': row[16], 'result': row[17],
+                        'payout': row[18], 'notes': row[19] if len(row) > 19 else '',
+                        'file': os.path.basename(filepath)
+                    })
+                elif len(header) >= 18 and len(row) >= 18:
+                    # 18-col format
+                    all_rows.append({
+                        'id': row[0], 'time': row[1], 'away': row[2], 'home': row[3],
+                        'fair': row[4], 'market': row[5], 'edge': row[6],
+                        'kelly': row[7], 'conf': row[8], 'pick': row[9],
+                        'type': row[10], 'book': row[11], 'odds': row[12],
+                        'bet': row[13], 'to_win': row[14], 'result': row[15],
+                        'payout': row[16], 'notes': row[17] if len(row) > 17 else '',
+                        'file': os.path.basename(filepath)
+                    })
+                elif len(header) >= 14 and len(row) >= 14:
+                    # Old 14-col format
+                    all_rows.append({
+                        'id': row[0], 'time': '', 'away': row[1], 'home': row[2],
+                        'fair': row[3], 'market': row[4], 'edge': row[5],
+                        'kelly': row[6], 'conf': '', 'pick': row[7],
+                        'type': 'Spread', 'book': row[8], 'odds': row[9],
+                        'bet': row[10], 'to_win': '', 'result': row[11],
+                        'payout': row[12], 'notes': row[13] if len(row) > 13 else '',
+                        'file': os.path.basename(filepath)
+                    })
 
-        total_wagered += bet_val
-        total_payout += payout_val
+        if not all_rows:
+            print("\n  📭 No bets found in the selected tracker(s).")
+            continue
 
-        bet_str = f"${bet_val:.0f}" if bet_val else '-'
-        payout_str = f"${payout_val:+.2f}" if r['payout'] else '-'
-        odds_str = r['odds'] if r['odds'] else '-'
-        edge_str = r['edge'] if r['edge'] else '-'
+        # ── Display formatted table ──
+        print(f"\n📊 BET TRACKER: {label}")
+        print("=" * 110)
+        id_w = 16 if len(selected_files) > 1 else 5
+        print(f"  {'ID':<{id_w}} {'Matchup':<30} {'Pick':<14} {'Edge':<7} {'Odds':<7} {'Bet':>7} {'Result':<8} {'Payout':>8}")
+        print(f"  {'-'*id_w} {'-'*30} {'-'*14} {'-'*7} {'-'*7} {'-'*7:>7} {'-'*8} {'-'*8:>8}")
 
-        # File tag when showing combined
-        file_id = r['id']
-        if len(selected_files) > 1:
-            # Extract date from filename for compact tag
-            date_part = r['file'].replace('bet_tracker_', '').replace('.csv', '')
-            file_id = f"{date_part}/{r['id']}"
+        total_wagered = 0.0
+        total_payout = 0.0
+        wins, losses, pending = 0, 0, 0
 
-        print(f"  {file_id:<{id_w}} {matchup:<30} {r['pick']:<14} {edge_str:<7} {odds_str:<7} {bet_str:>7} {result_display:<8} {payout_str:>8}")
+        for r in all_rows:
+            matchup = f"{r['away']} @ {r['home']}"
+            if len(matchup) > 28:
+                matchup = matchup[:27] + '…'
 
-        # Show notes if present
-        if r['notes']:
-            print(f"  {' ' * id_w} 📝 {r['notes']}")
+            result_str = r['result']
+            if result_str == 'WIN':
+                result_display = '✅ WIN'
+                wins += 1
+            elif result_str == 'LOSS':
+                result_display = '❌ LOSS'
+                losses += 1
+            elif result_str == 'PUSH':
+                result_display = '➡️  PUSH'
+                wins += 0  # neutral
+            else:
+                result_display = '⏳ PEND'
+                pending += 1
 
-    # ── Summary ──
-    print("=" * 110)
-    total_bets = wins + losses + pending
-    net = total_payout
-    win_rate = (wins / (wins + losses) * 100) if (wins + losses) > 0 else 0.0
-    roi = (net / total_wagered * 100) if total_wagered > 0 else 0.0
+            # Parse numeric values
+            try:
+                bet_val = float(r['bet']) if r['bet'] else 0.0
+            except ValueError:
+                bet_val = 0.0
+            try:
+                payout_val = float(r['payout']) if r['payout'] else 0.0
+            except ValueError:
+                payout_val = 0.0
 
-    net_color = '🟢' if net >= 0 else '🔴'
-    print(f"  📈 SUMMARY: {total_bets} bet{'s' if total_bets != 1 else ''} | "
-          f"{wins}W - {losses}L{f' - {pending}P' if pending else ''} | "
-          f"Win Rate: {win_rate:.1f}%")
-    print(f"  💰 Wagered: ${total_wagered:.0f} | "
-          f"Net P&L: {net_color} ${net:+.2f} | "
-          f"ROI: {roi:+.1f}%")
-    print("=" * 110)
-    input("\n  Press Enter to return to the main menu...")
+            total_wagered += bet_val
+            total_payout += payout_val
+
+            bet_str = f"${bet_val:.0f}" if bet_val else '-'
+            payout_str = f"${payout_val:+.2f}" if r['payout'] else '-'
+            odds_str = r['odds'] if r['odds'] else '-'
+            edge_str = r['edge'] if r['edge'] else '-'
+
+            # File tag when showing combined
+            file_id = r['id']
+            if len(selected_files) > 1:
+                # Extract date from filename for compact tag
+                date_part = r['file'].replace('bet_tracker_', '').replace('.csv', '')
+                file_id = f"{date_part}/{r['id']}"
+
+            print(f"  {file_id:<{id_w}} {matchup:<30} {r['pick']:<14} {edge_str:<7} {odds_str:<7} {bet_str:>7} {result_display:<8} {payout_str:>8}")
+
+            # Show notes if present
+            if r['notes']:
+                print(f"  {' ' * id_w} 📝 {r['notes']}")
+
+        # ── Summary ──
+        print("=" * 110)
+        total_bets = wins + losses + pending
+        net = total_payout
+        win_rate = (wins / (wins + losses) * 100) if (wins + losses) > 0 else 0.0
+        roi = (net / total_wagered * 100) if total_wagered > 0 else 0.0
+
+        net_color = '🟢' if net >= 0 else '🔴'
+        print(f"  📈 SUMMARY: {total_bets} bet{'s' if total_bets != 1 else ''} | "
+              f"{wins}W - {losses}L{f' - {pending}P' if pending else ''} | "
+              f"Win Rate: {win_rate:.1f}%")
+        print(f"  💰 Wagered: ${total_wagered:.0f} | "
+              f"Net P&L: {net_color} ${net:+.2f} | "
+              f"ROI: {roi:+.1f}%")
+        print("=" * 110)
 
 
 STALE_THRESHOLD_HOURS = int(os.environ.get('STALE_HOURS', 12))
