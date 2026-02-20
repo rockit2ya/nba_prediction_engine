@@ -18,6 +18,8 @@ nba_stats_cache.json
 nba_news_cache.json
 nba_injuries.csv
 nba_rest_penalty_cache.csv
+nba_schedule_cache.json
+nba_star_tax_cache.json
 game_schedule.csv
 odds_cache.json
 

@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 """
-update_results.py — Fetches final scores from NBA API and updates bet tracker CSVs.
+update_results.py — Fetches final scores from ESPN and updates bet tracker CSVs.
 
 Usage:
     python update_results.py
 
 Presents a menu of available bet_tracker_*.csv files, fetches completed game
-results from the NBA API, and updates the Result and Notes columns automatically.
+results from the ESPN Scoreboard API, and updates the Result and Notes columns.
 """
 
 import os
 import glob
 import re
 import pandas as pd
+import requests
 from datetime import datetime
-from nba_api.stats.endpoints import scoreboardv2
-from nba_api.stats.static import teams as nba_teams
-import time
 from dotenv import load_dotenv
+from nba_teams_static import NICKNAME_MAP, NICKNAME_ALIASES
 
 load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
 
@@ -29,17 +28,8 @@ except ImportError:
 
 API_KEY = os.getenv('ODDS_API_KEY', '')
 
-# ─── Team Name Mapping ───────────────────────────────────────────────────────
-# Build a lookup: nickname (e.g., "Mavericks") -> full team info
-ALL_TEAMS = nba_teams.get_teams()
-NICKNAME_MAP = {t['nickname']: t for t in ALL_TEAMS}
-
-# Common alternate names the CSV might use vs what the API returns
-NICKNAME_ALIASES = {
-    'Blazers': 'Trail Blazers',
-    'Sixers': '76ers',
-    'Wolves': 'Timberwolves',
-}
+# ─── ESPN Scoreboard API ──────────────────────────────────────────────────────
+ESPN_SCOREBOARD_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'
 
 
 def resolve_nickname(name):
@@ -65,57 +55,57 @@ def find_bet_tracker_files():
 
 def fetch_scores_for_date(date_str):
     """
-    Fetch all final game scores for a given date (YYYY-MM-DD) from the NBA API.
+    Fetch all final game scores for a given date (YYYY-MM-DD) from ESPN.
     Returns a list of dicts: {away_name, home_name, away_score, home_score, status}
     """
     dt = datetime.strptime(date_str, '%Y-%m-%d')
-    api_date = dt.strftime('%m/%d/%Y')
+    espn_date = dt.strftime('%Y%m%d')
 
-    print(f"  Fetching scores from NBA API for {date_str}...")
+    print(f"  Fetching scores from ESPN for {date_str}...")
     try:
-        sb = scoreboardv2.ScoreboardV2(game_date=api_date)
-        time.sleep(0.6)  # Rate limit courtesy
+        resp = requests.get(ESPN_SCOREBOARD_URL, params={'dates': espn_date}, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
     except Exception as e:
-        print(f"  ❌ NBA API Error: {e}")
+        print(f"  ❌ ESPN API Error: {e}")
         return []
 
-    # Parse GameHeader for game IDs and status
-    game_header = sb.game_header.get_data_frame()
-    line_score = sb.line_score.get_data_frame()
-
+    events = data.get('events', [])
     results = []
-    for _, game in game_header.iterrows():
-        game_id = game['GAME_ID']
-        status = game['GAME_STATUS_ID']  # 1=Scheduled, 2=In Progress, 3=Final
 
-        # Get the two teams from line_score for this game
-        game_lines = line_score[line_score['GAME_ID'] == game_id].sort_values('TEAM_ID')
+    for event in events:
+        status_type = event.get('status', {}).get('type', {})
+        status_name = status_type.get('name', '')
+        completed = status_type.get('completed', False)
 
-        if len(game_lines) < 2:
+        # Map status to numeric: 1=Scheduled, 2=In Progress, 3=Final
+        if completed or status_name == 'STATUS_FINAL':
+            status_code = 3
+        elif status_name == 'STATUS_IN_PROGRESS':
+            status_code = 2
+        else:
+            status_code = 1
+
+        competitors = event.get('competitions', [{}])[0].get('competitors', [])
+        if len(competitors) < 2:
             continue
 
-        # The away team is listed first in the matchup (VISITOR @ HOME)
-        # NBA API GAME_HEADER has HOME_TEAM_ID and VISITOR_TEAM_ID
-        home_id = game['HOME_TEAM_ID']
-        visitor_id = game['VISITOR_TEAM_ID']
-
-        home_line = game_lines[game_lines['TEAM_ID'] == home_id]
-        away_line = game_lines[game_lines['TEAM_ID'] == visitor_id]
-
-        if home_line.empty or away_line.empty:
+        away = next((c for c in competitors if c.get('homeAway') == 'away'), None)
+        home = next((c for c in competitors if c.get('homeAway') == 'home'), None)
+        if not away or not home:
             continue
 
-        home_row = home_line.iloc[0]
-        away_row = away_line.iloc[0]
+        away_score = int(away.get('score', 0)) if away.get('score') else None
+        home_score = int(home.get('score', 0)) if home.get('score') else None
 
         results.append({
-            'away_name': away_row['TEAM_NICKNAME'] if 'TEAM_NICKNAME' in away_row else away_row.get('TEAM_NAME', ''),
-            'home_name': home_row['TEAM_NICKNAME'] if 'TEAM_NICKNAME' in home_row else home_row.get('TEAM_NAME', ''),
-            'away_abbrev': away_row.get('TEAM_ABBREVIATION', ''),
-            'home_abbrev': home_row.get('TEAM_ABBREVIATION', ''),
-            'away_score': int(away_row['PTS']) if pd.notna(away_row['PTS']) else None,
-            'home_score': int(home_row['PTS']) if pd.notna(home_row['PTS']) else None,
-            'status': int(status),  # 3 = Final
+            'away_name': away['team'].get('shortDisplayName', ''),
+            'home_name': home['team'].get('shortDisplayName', ''),
+            'away_abbrev': away['team'].get('abbreviation', ''),
+            'home_abbrev': home['team'].get('abbreviation', ''),
+            'away_score': away_score,
+            'home_score': home_score,
+            'status': status_code,
         })
 
     return results
@@ -270,11 +260,11 @@ def update_tracker(filepath):
     scores = fetch_scores_for_date(date_str)
 
     if not scores:
-        print("  ⚠️  No game data returned from NBA API.")
-        print("     Games may not have started yet, or the API may be unavailable.")
+        print("  ⚠️  No game data returned from ESPN.")
+        print("     Games may not have started yet, or it's an off-day (All-Star break, etc.).")
         return
 
-    print(f"  Retrieved {len(scores)} game(s) from API.\n")
+    print(f"  Retrieved {len(scores)} game(s) from ESPN.\n")
 
     updated = 0
     still_pending = 0

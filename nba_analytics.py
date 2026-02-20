@@ -1,137 +1,131 @@
 import pandas as pd
-import requests
-import time
 import os
 import csv
 import json
-from bs4 import BeautifulSoup
 from datetime import datetime
-from nba_api.stats.endpoints import leaguedashteamstats, teamgamelog, teamplayeronoffsummary
-from nba_api.stats.static import teams, players
+from nba_teams_static import get_teams, TEAM_ID_TO_NAME, TEAM_NAME_TO_ID
 import difflib
 
-# --- BROWSER SETTINGS & SESSION ---
-# Persistent session keeps the connection open for massive speed gains
-session = requests.Session()
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-
-# Configure retry strategy for NBA API reliability
-retry_strategy = Retry(
-    total=3,
-    backoff_factor=1,
-    status_forcelist=[429, 500, 502, 503, 504],
-)
-adapter = HTTPAdapter(max_retries=retry_strategy)
-session.mount("http://", adapter)
-session.mount("https://", adapter)
-
-HEADERS = {
-    'Host': 'stats.nba.com',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Referer': 'https://www.nba.com/',
-    'Connection': 'keep-alive',
-}
+STAR_TAX_CACHE_FILE = 'nba_star_tax_cache.json'
 
 
 CACHE_FILE = "nba_stats_cache.json"
 LEAGUE_BASELINE = {'OFF_RATING': 115.5, 'DEF_RATING': 115.5, 'PACE': 99.2, 'NET_RATING': 0.0}
 
+def _normalize_timestamp(raw: str) -> str:
+    """Normalize any ISO-ish timestamp to 'YYYY-MM-DD HH:MM:SS' display format."""
+    if raw in ('Unknown', 'Missing'):
+        return raw
+    for fmt in ('%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S'):
+        try:
+            return datetime.strptime(raw.strip(), fmt).strftime('%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            continue
+    return raw  # return as-is if nothing matched
+
 def get_cache_times():
+    """Return dict of {cache_name: (normalised_timestamp, source_label)}."""
     times = {}
-    # Stats cache
+    # Stats cache  (NBA.com Selenium)
     if os.path.exists(CACHE_FILE):
         try:
             with open(CACHE_FILE, 'r') as f:
                 stats_cache = json.load(f)
-            times['stats'] = stats_cache.get('timestamp', 'Unknown')
+            times['stats'] = (stats_cache.get('timestamp', 'Unknown'),
+                              stats_cache.get('source', 'NBA.com'))
         except Exception:
-            times['stats'] = 'Unknown'
+            times['stats'] = ('Unknown', 'NBA.com')
     else:
-        times['stats'] = 'Missing'
-    # Injuries cache
+        times['stats'] = ('Missing', '')
+    # Injuries cache  (CBS Sports)
     if os.path.exists('nba_injuries.csv'):
         try:
             with open('nba_injuries.csv', 'r') as f:
                 first_line = f.readline()
             if first_line.startswith('# timestamp:'):
-                times['injuries'] = first_line.strip().split(':', 1)[1].strip()
+                times['injuries'] = (first_line.strip().split(':', 1)[1].strip(),
+                                     'CBS Sports')
             else:
-                times['injuries'] = 'Unknown'
+                times['injuries'] = ('Unknown', 'CBS Sports')
         except Exception:
-            times['injuries'] = 'Unknown'
+            times['injuries'] = ('Unknown', 'CBS Sports')
     else:
-        times['injuries'] = 'Missing'
-    # News cache
+        times['injuries'] = ('Missing', '')
+    # News cache  (ESPN RSS)
     if os.path.exists('nba_news_cache.json'):
         try:
             with open('nba_news_cache.json', 'r') as f:
                 news_cache = json.load(f)
-            times['news'] = news_cache.get('timestamp', 'Unknown')
+            times['news'] = (news_cache.get('timestamp', 'Unknown'),
+                             news_cache.get('source', 'ESPN'))
         except Exception:
-            times['news'] = 'Unknown'
+            times['news'] = ('Unknown', 'ESPN')
     else:
-        times['news'] = 'Missing'
-    # Rest penalty cache
+        times['news'] = ('Missing', '')
+    # Rest penalty cache  (ESPN Selenium)
     if os.path.exists('nba_rest_penalty_cache.csv'):
         try:
             with open('nba_rest_penalty_cache.csv', 'r') as f:
                 first_line = f.readline()
             if first_line.startswith('# timestamp:'):
-                times['rest'] = first_line.strip().split(':', 1)[1].strip()
+                times['rest'] = (first_line.strip().split(':', 1)[1].strip(),
+                                 'ESPN')
             else:
-                times['rest'] = 'Unknown'
+                times['rest'] = ('Unknown', 'ESPN')
         except Exception:
-            times['rest'] = 'Unknown'
+            times['rest'] = ('Unknown', 'ESPN')
     else:
-        times['rest'] = 'Missing'
-    return times
+        times['rest'] = ('Missing', '')
+    # Schedule cache  (ESPN primary / NBA.com fallback)
+    if os.path.exists('nba_schedule_cache.json'):
+        try:
+            with open('nba_schedule_cache.json', 'r') as f:
+                sched_cache = json.load(f)
+            times['schedule'] = (sched_cache.get('timestamp', 'Unknown'),
+                                 sched_cache.get('source', 'ESPN'))
+        except Exception:
+            times['schedule'] = ('Unknown', 'ESPN')
+    else:
+        times['schedule'] = ('Missing', '')
+    # Star tax cache  (NBA.com Selenium)
+    if os.path.exists(STAR_TAX_CACHE_FILE):
+        try:
+            with open(STAR_TAX_CACHE_FILE, 'r') as f:
+                st_cache = json.load(f)
+            times['star_tax'] = (st_cache.get('timestamp', 'Unknown'),
+                                 st_cache.get('source', 'NBA.com'))
+        except Exception:
+            times['star_tax'] = ('Unknown', 'NBA.com')
+    else:
+        times['star_tax'] = ('Missing', '')
+    return {k: (_normalize_timestamp(ts), src.split(' (Selenium)')[0] if src else src)
+            for k, (ts, src) in times.items()}
 
 def calculate_pace_and_ratings(season='2025-26', last_n_games=10, force_refresh=False):
     """
-    Fetches team stats from cache or live API.
-    
-    NOTE: The NBA Stats API times out frequently. For best results:
-    1. Use cached data (default behavior)
-    2. Manually refresh when available (force_refresh=True)
-    3. Run create_sample_cache.py to update with new data
-    """
-    # Prefer cached data (most reliable)
-    if not force_refresh and os.path.exists(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, 'r') as f:
-                cache = json.load(f)
-            df = pd.DataFrame(cache['data'])
-            # Convert dict-of-dicts to DataFrame
-            df = pd.DataFrame({col: list(col_dict.values()) for col, col_dict in cache['data'].items()})
-            if 'TEAM_ID' not in df.columns:
-                all_nba_teams = teams.get_teams()
-                name_to_id = {t['full_name']: t['id'] for t in all_nba_teams}
-                df['TEAM_ID'] = df['TEAM_NAME'].map(name_to_id)
-            cache_time = get_cache_times()['stats']
-            print(f"[✓] Using cached team stats (from {cache_time})")
-            return df
-        except Exception as e:
-            print(f"[!] Cache corrupted, attempting fresh fetch...")
+    Load team stats from the local nba_stats_cache.json file.
 
-    # Only use cached data for stats
+    All data is cache-only — no live API calls are made.
+    Use force_refresh=True after running fetch_all_nba_data.sh to
+    re-read the on-disk cache (e.g. from the [R] Refresh command).
+    """
     if os.path.exists(CACHE_FILE):
         try:
             with open(CACHE_FILE, 'r') as f:
                 cache = json.load(f)
             df = pd.DataFrame({col: list(col_dict.values()) for col, col_dict in cache['data'].items()})
-            cache_time = get_cache_times()['stats']
-            print(f"[✓] Using cached team stats (from {cache_time})")
+            if 'TEAM_ID' not in df.columns:
+                df['TEAM_ID'] = df['TEAM_NAME'].map(TEAM_NAME_TO_ID)
+            cache_time, _ = get_cache_times()['stats']
+            label = "Reloaded" if force_refresh else "Using"
+            print(f"[✓] {label} cached team stats (from {cache_time})")
             return df
         except Exception as e:
-            print(f"[!] Cache corrupted, unable to load stats.")
-            pass
+            print(f"[!] Cache corrupted: {e}")
+
     # Last resort: baseline (should rarely reach here)
-    print("[✗] Unable to fetch cached data. Using baseline fallback.")
-    all_nba_teams = teams.get_teams()
-    baseline_list = [{'TEAM_ID': t['id'], 'TEAM_NAME': t['full_name'], **LEAGUE_BASELINE} for t in all_nba_teams]
+    print("[✗] No cached stats found. Using baseline fallback.")
+    baseline_list = [{'TEAM_ID': t['id'], 'TEAM_NAME': t['full_name'], **LEAGUE_BASELINE} for t in get_teams()]
     return pd.DataFrame(baseline_list)
 
 def get_injuries():
@@ -171,22 +165,55 @@ def get_news():
         return []
 
 def get_star_tax_weighted(team_id, out_players):
-    """Calculates player impact using On-Off splits."""
-    if not out_players: return 0
+    """Calculates player impact using cached On-Off splits.
+    Reads from nba_star_tax_cache.json (prefetched by star_tax_prefetch.py).
+    Supports both player-name keyed (Selenium) and player-ID keyed (nba_api) caches."""
+    if not out_players:
+        return 0
     weights = {'out': 1.0, 'doubtful': 0.9, 'questionable': 0.5, 'probable': 0.1}
     total_tax = 0
     try:
-        on_off = teamplayeronoffsummary.TeamPlayerOnOffSummary(team_id=team_id, headers=HEADERS, timeout=8).get_data_frames()[1]
-        active_p = players.get_active_players()
+        if not os.path.exists(STAR_TAX_CACHE_FILE):
+            print(f"[⚠️  STAR TAX] No cache found. Run: bash fetch_all_nba_data.sh")
+            return None
+        with open(STAR_TAX_CACHE_FILE, 'r') as f:
+            cache = json.load(f)
+        team_data = cache.get('teams', {}).get(str(team_id), {})
+        player_impacts = team_data.get('players', {})
+        if not player_impacts:
+            if 'error' in team_data:
+                print(f"[⚠️  STAR TAX] Prefetch failed for team {team_id} — injury impact NOT factored.")
+                return None
+            return 0
+
+        # Detect lookup mode: keys are player names (Selenium) or player IDs (nba_api)
+        lookup_by_name = cache.get('lookup_by') == 'player_name'
+        # If any key is non-numeric, treat as name-based
+        if not lookup_by_name:
+            lookup_by_name = any(not k.isdigit() for k in player_impacts.keys())
+
         for p_info in out_players:
             weight = next((v for k, v in weights.items() if k in p_info['status']), 0)
-            p_id = next((p['id'] for p in active_p if p['full_name'].lower() == p_info['name'].lower()), None)
-            if p_id and weight > 0:
-                p_impact = on_off[on_off['PLAYER_ID'] == p_id]['ON_COURT_PLUS_MINUS'].values
-                if len(p_impact) > 0: total_tax += (p_impact[0] * weight)
+            if weight <= 0:
+                continue
+
+            pm = None
+            p_name = p_info['name'].lower()
+
+            if lookup_by_name:
+                # Selenium cache: keyed by lowercase player name
+                pm = player_impacts.get(p_name)
+            else:
+                # Legacy: keyed by player ID string — try direct name match fallback
+                # (nba_api removed; all new caches use name-based lookup)
+                pm = player_impacts.get(p_name)
+
+            if pm is not None:
+                total_tax += (float(pm) * weight)
+
         return round(total_tax / 2, 2)
     except Exception as e:
-        print(f"[⚠️  STAR TAX] API timeout for team {team_id} — injury impact NOT factored. ({e})")
+        print(f"[⚠️  STAR TAX] Cache read error for team {team_id}: {e}")
         return None  # Distinguish failure from 0 impact
 
 def get_rest_penalty(team_id):
@@ -194,9 +221,7 @@ def get_rest_penalty(team_id):
     # Use cached rest penalty data
     try:
         import pandas as pd
-        all_nba_teams = teams.get_teams()
-        id_to_name = {t['id']: t['full_name'] for t in all_nba_teams}
-        team_name = id_to_name.get(team_id, None)
+        team_name = TEAM_ID_TO_NAME.get(team_id, None)
         if not team_name:
             return 0
         # Skip header comment line if present

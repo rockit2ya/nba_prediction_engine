@@ -1,9 +1,8 @@
 """
 NBA Schedule Comparison Scraper
-Fetches today's NBA schedule from 3 sources and compares them:
+Fetches today's NBA schedule from 2 sources and compares them:
   1. ESPN  - HTML scrape of espn.com/nba/schedule
   2. NBA.com - JSON API via CDN (stats.nba.com/stats/scoreboardv3)
-  3. nba_api - Python library (live scoreboard + stats scoreboardv2)
 
 Usage:
   python schedule_scraper.py                  # Today's schedule
@@ -392,133 +391,47 @@ def scrape_nba_com(target_date):
     return games
 
 
-# ── Source 3: nba_api Python Library ─────────────────────────────────────
-
-def fetch_nba_api_live():
-    """
-    Fetch today's games from nba_api live scoreboard.
-    This only works for TODAY's games (no date parameter).
-    Returns list of dicts: [{away, home, time, game_id}, ...]
-    """
-    games = []
-    try:
-        from nba_api.live.nba.endpoints import scoreboard
-        sb = scoreboard.ScoreBoard()
-        data = sb.get_dict()['scoreboard']
-        api_date = data.get('gameDate', 'unknown')
-
-        for game in data.get('games', []):
-            away = game['awayTeam']['teamName']
-            home = game['homeTeam']['teamName']
-            games.append({
-                'away': normalize_team(away),
-                'home': normalize_team(home),
-                'time': game.get('gameStatusText', ''),
-                'game_id': game.get('gameId', ''),
-                'api_date': api_date,
-            })
-
-        if not games:
-            print(f"  [nba_api LIVE] Returned 0 games (API date: {api_date})")
-
-    except Exception as e:
-        print(f"  [nba_api LIVE ERROR] {e}")
-
-    return games
-
-
-def fetch_nba_api_stats(target_date):
-    """
-    Fetch games from nba_api ScoreboardV2 (stats endpoint).
-    Supports a date parameter.
-    Returns list of dicts: [{away, home, game_id}, ...]
-    """
-    games = []
-    try:
-        from nba_api.stats.endpoints import scoreboardv2
-        from nba_api.stats.static import teams as nba_teams
-
-        # Build team ID -> name map
-        all_teams = nba_teams.get_teams()
-        id_to_name = {t['id']: t['full_name'] for t in all_teams}
-
-        sb = scoreboardv2.ScoreboardV2(
-            game_date=target_date.strftime('%Y-%m-%d'),
-            league_id='00',
-            day_offset=0
-        )
-        header = sb.game_header.get_dict()
-        headers_list = header['headers']
-        rows = header['data']
-
-        home_idx = headers_list.index('HOME_TEAM_ID')
-        away_idx = headers_list.index('VISITOR_TEAM_ID')
-        gid_idx = headers_list.index('GAME_ID')
-        status_idx = headers_list.index('GAME_STATUS_TEXT')
-
-        for row in rows:
-            home_id = row[home_idx]
-            away_id = row[away_idx]
-            games.append({
-                'away': normalize_team(id_to_name.get(away_id, str(away_id))),
-                'home': normalize_team(id_to_name.get(home_id, str(home_id))),
-                'game_id': row[gid_idx],
-                'time': row[status_idx],
-            })
-
-    except Exception as e:
-        print(f"  [nba_api STATS ERROR] {e}")
-
-    return games
-
-
 # ── Comparison Logic ─────────────────────────────────────────────────────
 
-def compare_sources(espn, nba_com, nba_api_live, nba_api_stats, target_date):
-    """Compare game lists from all sources and print a detailed report."""
+def compare_sources(espn, nba_com, target_date):
+    """Compare game lists from ESPN and NBA.com and print a detailed report."""
 
     def to_matchup_set(games):
         return {make_matchup_key(g['away'], g['home']) for g in games}
 
     espn_set = to_matchup_set(espn)
     nba_com_set = to_matchup_set(nba_com)
-    live_set = to_matchup_set(nba_api_live)
-    stats_set = to_matchup_set(nba_api_stats)
 
     # Union of all games
-    all_matchups = sorted(espn_set | nba_com_set | live_set | stats_set)
+    all_matchups = sorted(espn_set | nba_com_set)
 
     date_display = target_date.strftime('%A, %B %d, %Y')
 
-    print("\n" + "=" * 90)
+    print("\n" + "=" * 70)
     print(f"  NBA SCHEDULE COMPARISON — {date_display}")
-    print("=" * 90)
+    print("=" * 70)
 
     # Summary counts
     print(f"\n{'Source':<30} {'Games Found':>12}")
     print("-" * 42)
     print(f"{'ESPN (web scrape)':<30} {len(espn):>12}")
     print(f"{'NBA.com (scoreboardv3 API)':<30} {len(nba_com):>12}")
-    print(f"{'nba_api (Live Scoreboard)':<30} {len(nba_api_live):>12}")
-    print(f"{'nba_api (ScoreboardV2 Stats)':<30} {len(nba_api_stats):>12}")
 
     if not all_matchups:
         print("\n  No games found from any source.")
         return
 
     # Detailed comparison table
-    print(f"\n{'#':<4} {'Away':<26} {'Home':<26} {'ESPN':^6} {'NBA':^6} {'Live':^6} {'Stats':^6}")
-    print("-" * 90)
+    print(f"\n{'#':<4} {'Away':<26} {'Home':<26} {'ESPN':^6} {'NBA':^6}")
+    print("-" * 70)
 
     for i, (away, home) in enumerate(all_matchups, 1):
         in_espn = '✓' if (away, home) in espn_set else '✗'
         in_nba = '✓' if (away, home) in nba_com_set else '✗'
-        in_live = '✓' if (away, home) in live_set else '✗'
-        in_stats = '✓' if (away, home) in stats_set else '✗'
 
         # Find time from the best available source
         time_str = ''
-        for src in [espn, nba_com, nba_api_stats, nba_api_live]:
+        for src in [espn, nba_com]:
             for g in src:
                 if make_matchup_key(g['away'], g['home']) == (away, home):
                     time_str = g.get('time', '')
@@ -526,37 +439,17 @@ def compare_sources(espn, nba_com, nba_api_live, nba_api_stats, target_date):
             if time_str:
                 break
 
-        away_display = f"{away}"
-        home_display = f"{home}"
-        print(f"{i:<4} {away_display:<26} {home_display:<26} {in_espn:^6} {in_nba:^6} {in_live:^6} {in_stats:^6}   {time_str}")
+        print(f"{i:<4} {away:<26} {home:<26} {in_espn:^6} {in_nba:^6}   {time_str}")
 
     # Discrepancy analysis
-    print("\n" + "-" * 90)
+    print("\n" + "-" * 70)
     print("DISCREPANCY ANALYSIS:")
-    print("-" * 90)
+    print("-" * 70)
 
     has_discrepancy = False
 
-    # Games missing from nba_api Live
-    missing_live = (espn_set | nba_com_set) - live_set
-    if missing_live:
-        has_discrepancy = True
-        print(f"\n  ⚠  nba_api LIVE is MISSING {len(missing_live)} game(s):")
-        for away, home in sorted(missing_live):
-            print(f"     • {away} @ {home}")
-        print("     → Live endpoint only returns today's games and may lag or be empty on off-days.")
-
-    # Games missing from nba_api Stats
-    missing_stats = (espn_set | nba_com_set) - stats_set
-    if missing_stats:
-        has_discrepancy = True
-        print(f"\n  ⚠  nba_api STATS (ScoreboardV2) is MISSING {len(missing_stats)} game(s):")
-        for away, home in sorted(missing_stats):
-            print(f"     • {away} @ {home}")
-        print("     → ScoreboardV2 may not populate until game day or may have delays.")
-
     # Games missing from ESPN
-    missing_espn = (nba_com_set | stats_set | live_set) - espn_set
+    missing_espn = nba_com_set - espn_set
     if missing_espn:
         has_discrepancy = True
         print(f"\n  ⚠  ESPN is MISSING {len(missing_espn)} game(s):")
@@ -564,26 +457,21 @@ def compare_sources(espn, nba_com, nba_api_live, nba_api_stats, target_date):
             print(f"     • {away} @ {home}")
 
     # Games missing from NBA.com
-    missing_nba = (espn_set | stats_set | live_set) - nba_com_set
+    missing_nba = espn_set - nba_com_set
     if missing_nba:
         has_discrepancy = True
         print(f"\n  ⚠  NBA.com API is MISSING {len(missing_nba)} game(s):")
         for away, home in sorted(missing_nba):
             print(f"     • {away} @ {home}")
 
-    # Games in ALL sources
     in_all = espn_set & nba_com_set
-    if live_set:
-        in_all &= live_set
-    if stats_set:
-        in_all &= stats_set
 
     if not has_discrepancy:
-        print("\n  ✅ All sources agree on the schedule!")
+        print("\n  ✅ Both sources agree on the schedule!")
     elif in_all:
-        print(f"\n  ✅ {len(in_all)} game(s) confirmed across all active sources.")
+        print(f"\n  ✅ {len(in_all)} game(s) confirmed across both sources.")
 
-    print("\n" + "=" * 90)
+    print("\n" + "=" * 70)
 
 
 # ── Main ─────────────────────────────────────────────────────────────────
@@ -599,33 +487,20 @@ def main():
     else:
         target_date = date.today()
 
-    is_today = (target_date == date.today())
     print(f"\n🏀 NBA Schedule Comparison — {target_date.strftime('%A, %B %d, %Y')}")
     print("=" * 60)
 
-    # Fetch from all sources
-    print("\n[1/4] Scraping ESPN schedule...")
+    # Fetch from both sources
+    print("\n[1/2] Scraping ESPN schedule...")
     espn = scrape_espn(target_date)
     print(f"       → {len(espn)} games found")
 
-    print("[2/4] Fetching NBA.com scoreboardv3 API...")
+    print("[2/2] Fetching NBA.com scoreboardv3 API...")
     nba_com = scrape_nba_com(target_date)
     print(f"       → {len(nba_com)} games found")
 
-    print("[3/4] Querying nba_api Live Scoreboard...")
-    if is_today:
-        nba_api_live = fetch_nba_api_live()
-    else:
-        nba_api_live = []
-        print("       → Skipped (Live endpoint only supports today)")
-    print(f"       → {len(nba_api_live)} games found")
-
-    print("[4/4] Querying nba_api ScoreboardV2 Stats...")
-    nba_api_stats = fetch_nba_api_stats(target_date)
-    print(f"       → {len(nba_api_stats)} games found")
-
     # Compare
-    compare_sources(espn, nba_com, nba_api_live, nba_api_stats, target_date)
+    compare_sources(espn, nba_com, target_date)
 
 
 if __name__ == '__main__':

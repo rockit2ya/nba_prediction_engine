@@ -1,51 +1,116 @@
-# 🏀 NBA Predictive Analytics Engine (v3.0)
+# 🏀 NBA Predictive Analytics Engine (v3.1 — Cache-Only Architecture)
 
 This README covers the features, technical architecture, mathematical modeling, and deployment steps for the NBA Prediction Engine (engine).
 
 ### **Overview**
 
-The **NBA Pro Engine (V3)** is a situational analytics tool designed for high-fidelity point spread predictions. Unlike basic models that use season averages, this engine prioritizes "Current Form" and "Immediate Context" to find market inefficiencies. It leverages the **NBA's Four-Factors** and advanced efficiency ratings to calculate a "Fair Line" (Projected Spread) for daily matchups. Unlike basic models that rely on season averages, this engine incorporates real-time injury scraping, fatigue adjustments (Back-to-Backs), and dynamic home-court weighting.
+The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-fidelity point spread predictions. Unlike basic models that use season averages, this engine prioritizes "Current Form" and "Immediate Context" to find market inefficiencies. It leverages the **NBA's Four-Factors** and advanced efficiency ratings to calculate a "Fair Line" (Projected Spread) for daily matchups.
+
+**v3.1** is a ground-up reliability and performance overhaul. The engine now runs entirely off pre-cached data — **zero live API calls** are made from the UI. All data is fetched by dedicated prefetch scripts (`fetch_all_nba_data.sh`), and the UI reads only from local cache files. This eliminates API timeouts, rate limits, and network dependency during analysis, cutting startup time from **30+ seconds to under 1 second**.
+
+### **What Changed in v3.1**
+
+| Area | Before (v3.0) | After (v3.1) |
+|---|---|---|
+| **Schedule** | Live `ScoreboardV2` API call on every startup | Pre-cached from ESPN via `schedule_prefetch.py` |
+| **Team Stats** | `nba_api` Python module (frequent timeouts) | Selenium scrape of NBA.com, cached to JSON |
+| **Star Tax** | Live `nba_api` player on/off stats | Pre-cached NET_RATING from NBA.com via `star_tax_prefetch.py` |
+| **Final Scores** | `nba_api` ScoreboardV2 endpoint | ESPN JSON API (`site.api.espn.com`) |
+| **Team Lookups** | `nba_api.stats.static` (network import) | Local `nba_teams_static.py` module (zero I/O) |
+| **UI Startup** | 30+ seconds (API calls + retries) | < 1 second (cache reads only) |
+| **Failure Mode** | Crashes or hangs on API timeout | Always works if caches exist; stale-data warnings shown |
+| **Dependencies** | `nba_api==1.11.3` required | `nba_api` fully removed |
+
+> **Why `nba_api` was removed:** The `nba_api` Python module (which wraps `stats.nba.com` endpoints) proved chronically unreliable — requests would frequently timeout, hang indefinitely, or get rate-limited with no error message. This caused the UI to stall for 30+ seconds on startup and sometimes crash entirely. Rather than continuing to work around an unstable dependency, v3.1 replaced every `nba_api` call with direct web scraping (Selenium for NBA.com advanced stats, ESPN JSON API for schedule and scores) and a local static team-data module (`nba_teams_static.py`). The result is faster, more reliable, and fully offline once caches are populated.
 
 ### **Key Pro Features**
 
+- **Cache-Only Architecture:** The UI makes zero network calls. All data is pre-fetched by `fetch_all_nba_data.sh` and read from local cache files. Startup is sub-second.
+- **Stale Cache Warnings:** The banner shows cache freshness with feed source labels. Caches older than 12 hours (configurable via `STALE_HOURS` in `.env`) are flagged with a warning.
+- **Multi-Source Data Pipeline:** ESPN (schedule, scores, news, rest), NBA.com (team advanced stats, player NET_RATING), CBS Sports (injuries), The Odds API (spreads/CLV).
 - **Situational Modeling:** Factors in Back-to-Back (B2B) fatigue and dynamic Home Court Advantage (HCA).
-- **Bayesian Star Tax:** Uses individual "On-Off" metrics weighted by official injury status (OUT, GTD, Doubtful).
-- **Dual-Source Scoreboard:** Primary schedule via NBA ScoreboardV2 API with automatic ESPN web-scrape fallback — games load reliably even during All-Star breaks and off days.
+- **Bayesian Star Tax:** Uses individual NET_RATING metrics weighted by official injury status (OUT, GTD, Doubtful).
 - **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research. Upcoming games run in **preview mode** (no bet logging) to encourage re-analysis with fresh data on game day.
 - **Bet Tracker Viewer:** `[B]` command displays a formatted table of all bets from any tracker file (or all combined), with per-bet details and a P&L summary including record, win rate, net profit, and ROI.
-- **Optimized Performance:** Multi-threaded API calls and persistent sessions for sub-2-second analysis.
+- **Optimized Performance:** All analysis runs on local cached data — no network latency, no retries.
 - **Kelly Criterion Integration:** Calculates conservative bankroll risk for every edge found.
 - **CLV Tracking:** Fetches live odds from The Odds API to measure Closing Line Value — the gold standard for proving real edge.
-- **Emergency Fallback:** Continues working even if the NBA API is down using baseline league data.
+- **Baseline Fallback:** If no cache exists, the engine uses hard-coded league-average baselines so it never crashes.
 
 ### **Project Structure & File Guide**
 
 | File/Folder                      | Purpose                                                                                                                                                                                                                                   |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nba_engine_ui.py`               | Main command-line interface. Uses ScoreboardV2 (primary) + ESPN scrape (fallback) for schedule. Supports `[G#]` analysis, `[U]` upcoming games, `[B]` bet tracker viewer, `[C]` custom matchups, `[R]` refresh, and graceful Ctrl+C exit. |
-| `schedule_scraper.py`            | Multi-source NBA schedule comparison tool. Scrapes ESPN and queries NBA APIs (scoreboardv3, ScoreboardV2, Live) to compare and validate game data. Also provides ESPN fallback for the UI.                                                |
-| `nba_analytics.py`               | Core analytics logic and spread prediction. Bayesian Star Tax, late-scratch detection, fatigue adjustments. Reads from pre-fetched cache files.                                                                                           |
-| `nba_data_fetcher_advanced.py`   | Selenium-based NBA.com advanced stats scraper. Used as a fallback if `nba_api` fails.                                                                                                                                                     |
+| `nba_engine_ui.py`               | Main command-line interface. Reads schedule from cached JSON (ESPN-sourced). Supports `[G#]` analysis, `[U]` upcoming games, `[B]` bet tracker viewer, `[C]` custom matchups, `[R]` refresh all caches, and graceful Ctrl+C exit. Zero network calls. |
+| `nba_analytics.py`               | Core analytics logic and spread prediction. Bayesian Star Tax, late-scratch detection, fatigue adjustments. Reads exclusively from pre-fetched cache files.                                                                                |
+| `nba_teams_static.py`            | Local static module with all 30 NBA teams — IDs, names, abbreviations, nicknames. Replaces `nba_api.stats.static` with zero network dependency.                                                                                          |
+| `schedule_prefetch.py`           | Prefetches today + 7 days of NBA schedule from ESPN (primary) with NBA.com fallback. Writes `nba_schedule_cache.json`.                                                                                                                    |
+| `star_tax_prefetch.py`           | Selenium scraper that fetches player NET_RATING from NBA.com's advanced stats page for all 30 teams. Writes `nba_star_tax_cache.json`.                                                                                                    |
+| `nba_data_fetcher_advanced.py`   | Selenium-based NBA.com advanced team stats scraper. Writes `nba_stats_cache.json`.                                                                                                                                                        |
 | `injury_scraper.py`              | Scrapes CBS Sports for NBA injury data and caches to `nba_injuries.csv`.                                                                                                                                                                  |
 | `nba_lineup_and_news_monitor.py` | Scrapes ESPN for NBA lineups/injuries and fetches breaking news via ESPN RSS feed.                                                                                                                                                        |
 | `rest_penalty_scraper.py`        | Scrapes and caches rest/fatigue penalty data per team to `nba_rest_penalty_cache.csv`.                                                                                                                                                    |
 | `cache_nba_news.py`              | Fetches ESPN RSS news feed and caches to `nba_news_cache.json` for offline use.                                                                                                                                                           |
-| `post_mortem.py`                 | Post-game analysis tool for reviewing bet outcomes and model accuracy.                                                                                                                                                                    |
-| `update_results.py`              | Auto-fetches final scores from NBA API and updates bet tracker CSVs with WIN/LOSS/PUSH results. Also populates CLV (Closing Line Value) from cached odds.                                                                                 |
+| `schedule_scraper.py`            | Multi-source NBA schedule comparison tool. Scrapes ESPN and NBA.com to compare and validate game data side-by-side.                                                                                                                       |
+| `edge_analyzer.py`               | Edge decomposition and diagnostics — breaks down how each component (efficiency, HCA, fatigue, star tax) contributes to the predicted spread.                                                                                             |
+| `update_results.py`              | Auto-fetches final scores from ESPN JSON API and updates bet tracker CSVs with WIN/LOSS/PUSH results. Also populates CLV (Closing Line Value) from cached odds.                                                                           |
 | `odds_api.py`                    | Fetches live NBA spreads from The Odds API and caches them for CLV tracking. Run via `fetch_all_nba_data.sh` or standalone.                                                                                                               |
-| `fetch_all_nba_data.sh`          | Bash script to run all data fetchers/scrapers (including odds) and verify all caches are up to date.                                                                                                                                      |
-| `fetch_all_nba_data.log`         | Log file generated by `fetch_all_nba_data.sh` with details of each fetcher run.                                                                                                                                                           |
-| `nba_stats_cache.json`           | Cached NBA team advanced stats (auto-generated/updated by fetchers and engine).                                                                                                                                                           |
-| `nba_injuries.csv`               | Cached injury report data (auto-generated by `injury_scraper.py`).                                                                                                                                                                        |
-| `nba_news_cache.json`            | Cached NBA news items from ESPN RSS (auto-generated by `cache_nba_news.py`).                                                                                                                                                              |
-| `nba_rest_penalty_cache.csv`     | Cached rest/fatigue penalty data per team (auto-generated by `rest_penalty_scraper.py`).                                                                                                                                                  |
+| `post_mortem.py`                 | Post-game analysis tool for reviewing bet outcomes and model accuracy.                                                                                                                                                                    |
+| `fetch_all_nba_data.sh`          | Master pipeline script — runs all 8 prefetchers in order, validates 6 core caches, reports summary. This is the single command to refresh everything.                                                                                     |
+| `.env.example`                   | Template for environment config. Contains `ODDS_API_KEY` for CLV tracking and `STALE_HOURS` for cache freshness threshold (default: 12).                                                                                                  |
+| `nba_stats_cache.json`           | Cached NBA team advanced stats (auto-generated by `nba_data_fetcher_advanced.py`). Source: NBA.com.                                                                                                                                       |
+| `nba_schedule_cache.json`        | Cached NBA schedule for today + 7 days (auto-generated by `schedule_prefetch.py`). Source: ESPN.                                                                                                                                          |
+| `nba_star_tax_cache.json`        | Cached player NET_RATING data for all 30 teams (auto-generated by `star_tax_prefetch.py`). Source: NBA.com.                                                                                                                               |
+| `nba_injuries.csv`               | Cached injury report data (auto-generated by `injury_scraper.py`). Source: CBS Sports.                                                                                                                                                    |
+| `nba_news_cache.json`            | Cached NBA news items from ESPN RSS (auto-generated by `cache_nba_news.py`). Source: ESPN.                                                                                                                                                |
+| `nba_rest_penalty_cache.csv`     | Cached rest/fatigue penalty data per team (auto-generated by `rest_penalty_scraper.py`). Source: ESPN.                                                                                                                                    |
 | `odds_cache.json`                | Cached NBA spread odds from The Odds API (auto-generated by `odds_api.py`). Used for CLV calculation.                                                                                                                                     |
 | `game_schedule.csv`              | Local schedule data for rest/fatigue calculations.                                                                                                                                                                                        |
 | `bet_tracker_YYYY-MM-DD.csv`     | Daily log of all bets with timestamp, fair lines, edges, Kelly calculations, confidence grade, bet type, sportsbook, odds, and real-dollar tracking (including auto-calculated ToWin).                                                    |
-| `requirements.txt`               | Python dependencies for the project.                                                                                                                                                                                                      |
 | `text_to_image.py`               | Renders terminal text output as a full-length PNG screenshot with color-coded lines. Usage: `python text_to_image.py <input.txt> [output.png]`                                                                                            |
+| `requirements.txt`               | Python dependencies for the project. Note: `nba_api` has been fully removed.                                                                                                                                                              |
 | `BETTING_GUIDE.md`               | Guide to using the engine for betting, including manual steps and best practices.                                                                                                                                                         |
 | `README.md`                      | This file.                                                                                                                                                                                                                                |
+
+---
+
+## 🏗️ Data Pipeline Architecture
+
+The engine separates **data fetching** (network-dependent) from **analysis** (cache-only). This design ensures the UI never stalls on a slow or unreachable API.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  fetch_all_nba_data.sh                       │
+│  Runs 8 prefetchers → validates 6 core caches → logs all    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  nba_data_fetcher_advanced.py  ──→  nba_stats_cache.json    │  (NBA.com Selenium)
+│  injury_scraper.py             ──→  nba_injuries.csv        │  (CBS Sports)
+│  nba_lineup_and_news_monitor.py                              │  (ESPN)
+│  rest_penalty_scraper.py       ──→  nba_rest_penalty_cache  │  (ESPN Selenium)
+│  cache_nba_news.py             ──→  nba_news_cache.json     │  (ESPN RSS)
+│  schedule_prefetch.py          ──→  nba_schedule_cache.json │  (ESPN API)
+│  star_tax_prefetch.py          ──→  nba_star_tax_cache.json │  (NBA.com Selenium)
+│  odds_api.py                   ──→  odds_cache.json         │  (The Odds API)
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│                    nba_engine_ui.py                          │
+│        Reads ONLY from cache files — zero network calls      │
+│        Startup: < 1 second                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Data Sources
+
+| Cache | Source | Feed | Refresh Method |
+|---|---|---|---|
+| Team Stats | NBA.com | Selenium scrape of `/stats/teams/advanced` | `nba_data_fetcher_advanced.py` |
+| Injuries | CBS Sports | HTML scrape of `/nba/injuries/` | `injury_scraper.py` |
+| News | ESPN | RSS feed `espn.com/espn/rss/nba/news` | `cache_nba_news.py` |
+| Rest Penalty | ESPN | Selenium scrape of scoreboard | `rest_penalty_scraper.py` |
+| Schedule | ESPN | JSON API `site.api.espn.com` | `schedule_prefetch.py` |
+| Star Tax | NBA.com | Selenium scrape of `/stats/players/advanced` | `star_tax_prefetch.py` |
+| Odds/CLV | The Odds API | REST API (500 req/month free) | `odds_api.py` |
 
 ---
 
@@ -57,19 +122,22 @@ Follow these steps to get the most out of the NBA Prediction Engine:
    - Before analyzing games, refresh all caches by either:
      - Running `bash fetch_all_nba_data.sh` from the terminal, or
      - Using the `[R] Refresh Data` command inside the engine UI.
-   - This fetches advanced stats, injury reports, rest penalties, and news from ESPN/CBS/RSS.
+   - This fetches advanced stats (NBA.com), injuries (CBS Sports), rest penalties (ESPN), news (ESPN RSS), schedule (ESPN), star tax (NBA.com), and odds (The Odds API).
+   - The script validates all 6 core cache files and reports a summary.
 
 2. **Analyze Games and Generate Recommendations**
    - Run the engine: `python nba_engine_ui.py`
-   - The UI displays today's NBA schedule via ScoreboardV2 (with ESPN fallback).
+   - The UI displays today's NBA schedule from the pre-cached ESPN schedule (sub-second load).
+   - The **DATA CACHE FRESHNESS** banner shows the timestamp and source of every cache, with warnings if any data is stale (configurable via `STALE_HOURS` in `.env`).
    - Use `[U]` to browse the next 7 days of upcoming games and select any for preview analysis.
    - **Note:** Upcoming games (`U#`) run in **preview mode** — full analysis is shown but not logged to the bet tracker. This ensures bets are only recorded with fresh game-day data. Re-analyze on game day to log.
    - For each game, input the market line when prompted.
    - The engine calculates the fair line, edge, and confidence, factoring in:
-     - Advanced stats (offensive/defensive ratings, pace)
-     - Injury data (CBS/ESPN)
-     - Late-breaking news (ESPN RSS)
+     - Advanced stats (offensive/defensive ratings, pace) — from NBA.com cache
+     - Injury data — from CBS Sports cache
+     - Late-breaking news — from ESPN RSS cache
      - Rest/fatigue penalties and dynamic home-court advantage
+     - Star Tax (player NET_RATING impact) — from NBA.com cache
 
 3. **Automated Flagging & Recommendation**
    - Every game shows a **bet recommendation** with a signal tier:
@@ -92,7 +160,7 @@ Follow these steps to get the most out of the NBA Prediction Engine:
    - When results are populated, `update_results.py` auto-calculates the **Payout** column using American odds math.
 
 5. **Post-Analysis**
-   - Run `python update_results.py` to auto-populate WIN/LOSS results from the NBA API.
+   - Run `python update_results.py` to auto-populate WIN/LOSS results from ESPN.
    - Run `python post_mortem.py` for the full performance analyzer:
      - **[1] Single-Day Post-Mortem** — detailed win/loss breakdown with injury and margin analysis
      - **[2] Lifetime Performance Dashboard** — all-time record, ROI, streaks, drawdown, and pro-level verdict
@@ -102,7 +170,9 @@ Follow these steps to get the most out of the NBA Prediction Engine:
 
 This workflow ensures your predictions are based on the most current cached data, with built-in alerts for late-breaking news and injuries, and a clear audit trail for every bet.
 
-> **📡 Dual-Source Scoreboard:** The engine uses `ScoreboardV2` (NBA stats API) as the primary schedule source, which supports any date and populates reliably. If the NBA API is unreachable, it automatically falls back to scraping ESPN's schedule page. The source is displayed in the UI header (e.g., `📡 Source: NBA API` or `📡 Source: ESPN`).
+> **📡 Cache-Only Schedule:** The engine loads the schedule from a pre-cached ESPN JSON file (`nba_schedule_cache.json`) — no live API calls at startup. Run `bash fetch_all_nba_data.sh` or `[R]` to refresh. The source is displayed in the banner (e.g., `(ESPN)`).
+>
+> **⏱️ Cache Freshness Warnings:** The banner displays the age and source feed of every cache. If any cache is older than the configurable threshold (default: 12 hours, set via `STALE_HOURS` in `.env`), the UI warns you to refresh before analyzing games.
 >
 > **📆 Upcoming Games:** Use the `[U]` command to browse the next 7 days of NBA games. Each game gets a selectable ID (e.g., `U1`, `U12`) so you can run pre-game analysis days in advance — great for scouting before lines move. Upcoming games run in **preview mode**: full analysis is displayed but not logged to the bet tracker, since injuries, lines, and rest data may change by game day. Re-analyze on game day with `[G#]` to log a real bet.
 >
@@ -128,7 +198,7 @@ The script will:
 
 1. List all available `bet_tracker_*.csv` files with their pending/complete status
 2. Let you select a specific file or update all pending files at once
-3. Fetch final scores from the NBA API
+3. Fetch final scores from the ESPN JSON API (`site.api.espn.com`)
 4. Determine WIN/LOSS based on whether your pick covered the spread
 5. Save the updated CSV with results and final scores
 
@@ -249,13 +319,12 @@ These scripts provide additional analysis, data checks, and manual overrides for
   - Tip: Use the VS Code **Terminal Capture** extension to save terminal output to a text file first.
 
 - **schedule_scraper.py**
-  - Multi-source NBA schedule comparison tool. Fetches today's (or any date's) games from up to 4 sources — ESPN web scrape, NBA.com stats API, nba_api Live Scoreboard, and nba_api ScoreboardV2 — then prints a side-by-side comparison grid showing which sources agree. Useful for validating schedule data, debugging missing games, or verifying the engine's dual-source fallback logic.
+  - Multi-source NBA schedule comparison tool. Fetches today's (or any date's) games from ESPN and NBA.com, then prints a side-by-side comparison grid showing which sources agree. Useful for validating schedule data or debugging missing games.
   - Usage:
     ```bash
     python schedule_scraper.py              # Compare sources for today
     python schedule_scraper.py 2026-02-22   # Compare sources for a specific date
     ```
-  - Also used internally by the engine: `nba_engine_ui.py` imports `scrape_espn` from this module as its ESPN fallback source.
 
 These tools are optional but recommended for power users who want deeper insight, custom data, or extra validation before betting.
 
@@ -294,11 +363,13 @@ pip install -r requirements.txt
 
 ### **Step 4: Fetch NBA Data & Set Up API Keys**
 
-Run the data fetcher to populate all caches (stats, injuries, news, odds):
+Run the data pipeline to populate all caches (stats, injuries, news, schedule, star tax, odds):
 
 ```bash
 bash fetch_all_nba_data.sh
 ```
+
+This runs 8 prefetchers, validates 6 core cache files, and reports a summary. The engine will not function correctly without cached data — run this first.
 
 **Optional — Enable CLV Tracking:**
 
@@ -310,7 +381,15 @@ cp .env.example .env
 # Edit .env and replace "your_api_key_here" with your real key
 ```
 
-The engine works without this — CLV columns will simply be left blank.
+**Optional — Configure Stale Cache Threshold:**
+
+Edit `.env` to change when the UI warns about old data (default: 12 hours):
+
+```bash
+STALE_HOURS=12
+```
+
+The engine works without these — CLV columns will simply be left blank, and the stale threshold defaults to 12 hours.
 
 ### **Step 5: Select the Python Interpreter**
 
@@ -336,11 +415,14 @@ python nba_engine_ui.py
 
 ## 🏁 Pro Troubleshooting
 
-- **Slow Data:** The first run creates the cache. Subsequent runs will be nearly instant.
-- **Connection Error:** If the NBA blocks your Wi-Fi, toggle your iPhone's **Airplane Mode** for 5 seconds to reset your hotspot's IP address.
+- **Stale Data Warnings:** The engine displays cache freshness in the banner. If you see ⚠️ warnings, run `[R]` or `bash fetch_all_nba_data.sh` to refresh.
+- **Missing Cache Files:** If a cache file is missing, the banner shows 🚨 MISSING CACHE. Run the data pipeline to populate it.
+- **Slow First Run:** The first `bash fetch_all_nba_data.sh` run takes longer (Selenium scraping). Subsequent UI runs are < 1 second since they only read cached files.
+- **Connection Error:** If ESPN or NBA.com blocks your IP, toggle your iPhone's **Airplane Mode** for 5 seconds to reset your hotspot's IP address.
 - **Missing Data:** If the CSV isn't updating, ensure you have "Write" permissions for the folder you opened in VS Code.
-- **ChromeDriver Errors:** The advanced stats scraper (`nba_data_fetcher_advanced.py`) uses Selenium and requires Google Chrome. Install Chrome from [google.com/chrome](https://www.google.com/chrome/). ChromeDriver is managed automatically by `webdriver-manager`.
+- **ChromeDriver Errors:** The advanced stats scraper (`nba_data_fetcher_advanced.py`) and star tax scraper (`star_tax_prefetch.py`) use Selenium and require Google Chrome. Install Chrome from [google.com/chrome](https://www.google.com/chrome/). ChromeDriver is bundled with Chrome and managed automatically.
 - **No CLV Data:** If CLV columns are blank, ensure your `.env` file contains a valid `ODDS_API_KEY` and run `bash fetch_all_nba_data.sh` before game tip-off to cache the odds.
+- **Stale Threshold Too Sensitive:** Adjust `STALE_HOURS` in `.env` (default: 12). Set higher for less frequent refreshing.
 
 ---
 
@@ -364,7 +446,7 @@ To move beyond a 50% accuracy rate, the engine applies three situational layers:
 
 - **Fatigue Adjuster (B2B):** Detects if a team played the previous night. A **-2.5 point penalty** is applied to tired teams to account for drops in rebounding and defensive intensity.
 - **Dynamic Home Court (HCA):** Instead of a flat +3.0, the engine calculates a team-specific HCA based on their season-long Home vs. Road Net Rating.
-- **Star Tax (Injury Impact):** Scrapes live injury reports. If a star is out, the engine looks up their individual `On-Off Plus/Minus` and subtracts that value from the team's total power rating.
+- **Star Tax (Injury Impact):** Scrapes injury reports from CBS Sports. If a star is out, the engine looks up their individual **NET_RATING** from the pre-cached NBA.com player advanced stats and subtracts that value from the team's total power rating.
 
 ### 3. The Sanity Check (Volatility Filter)
 
@@ -504,7 +586,7 @@ Beyond B2B detection, add:
 ### 7. Lineup-Specific Net Ratings
 
 **Status:** TODO  
-**Feasibility:** Medium — available via `nba_api` lineup endpoints  
+**Feasibility:** Medium — available via NBA.com lineup stats pages  
 **Expected impact:** Medium
 
 Go beyond "who's out" to model "who replaces them." Five-man lineup net ratings show how specific combos perform together. When a starter is out, _who_ gets those minutes matters more than the absence itself. Factor in minutes distribution shifts and rotation depth (a team missing its 6th man in a B2B is worse than missing them with 3 days rest).

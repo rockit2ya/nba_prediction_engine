@@ -5,10 +5,7 @@ import json
 import subprocess
 import time
 from datetime import datetime, timedelta, date
-from nba_api.stats.endpoints import scoreboardv2
-from nba_api.stats.static import teams
 from nba_analytics import predict_nba_spread, log_bet, get_cache_times, calculate_pace_and_ratings
-from schedule_scraper import scrape_espn, normalize_team
 
 DEFAULT_EDGE_CAP = 10
 
@@ -28,65 +25,43 @@ def calculate_kelly(market, fair_line):
     kelly_f = ((b * prob) - (1 - prob)) / b
     return round(max(0, kelly_f * 0.25) * 100, 2)
 
-# ── Team ID lookup for ScoreboardV2 ──────────────────────────────────────
-_ALL_TEAMS = teams.get_teams()
-_TEAM_ID_TO_NAME = {t['id']: t['full_name'] for t in _ALL_TEAMS}
+# ── Schedule Cache (fully offline) ───────────────────────────────────────
+SCHEDULE_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nba_schedule_cache.json')
+_schedule_cache = None  # in-memory singleton
 
 
-def fetch_games_scoreboardv2(target_date):
-    """Fetch games from nba_api ScoreboardV2 for a given date.
-    Returns list of (away_name, home_name, status_text) tuples."""
-    try:
-        sb = scoreboardv2.ScoreboardV2(
-            game_date=target_date.strftime('%Y-%m-%d'),
-            league_id='00',
-            day_offset=0
-        )
-        header = sb.game_header.get_dict()
-        headers_list = header['headers']
-        rows = header['data']
-
-        home_idx = headers_list.index('HOME_TEAM_ID')
-        away_idx = headers_list.index('VISITOR_TEAM_ID')
-        status_idx = headers_list.index('GAME_STATUS_TEXT')
-
-        games = []
-        seen = set()
-        for row in rows:
-            away = _TEAM_ID_TO_NAME.get(row[away_idx], str(row[away_idx]))
-            home = _TEAM_ID_TO_NAME.get(row[home_idx], str(row[home_idx]))
-            status = row[status_idx]
-            key = (away, home)
-            if key not in seen:
-                seen.add(key)
-                games.append((away, home, status))
-        return games
-    except Exception as e:
-        return None  # Signal caller to try fallback
+def _load_schedule_cache():
+    """Load schedule cache from disk once, then reuse in memory."""
+    global _schedule_cache
+    if _schedule_cache is not None:
+        return _schedule_cache
+    if os.path.exists(SCHEDULE_CACHE_FILE):
+        try:
+            with open(SCHEDULE_CACHE_FILE, 'r') as f:
+                _schedule_cache = json.load(f)
+            return _schedule_cache
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"[!] Schedule cache unreadable: {e}")
+    _schedule_cache = {}  # empty sentinel so we don't retry disk
+    return _schedule_cache
 
 
-def fetch_games_espn(target_date):
-    """Fallback: scrape ESPN schedule for a given date.
-    Returns list of (away_name, home_name, status_text) tuples."""
-    try:
-        espn_games = scrape_espn(target_date)
-        return [(g['away'], g['home'], g.get('time', '')) for g in espn_games]
-    except Exception:
-        return []
+def invalidate_schedule_cache():
+    """Force reload from disk (called after a data refresh)."""
+    global _schedule_cache
+    _schedule_cache = None
 
 
 def load_schedule_for_date(target_date):
-    """Load games for a date: ScoreboardV2 primary, ESPN fallback.
-    Returns (games_list, source_label)."""
-    games = fetch_games_scoreboardv2(target_date)
-    if games is not None and len(games) > 0:
-        return games, 'NBA API'
-
-    # Fallback to ESPN
-    games = fetch_games_espn(target_date)
-    if games:
-        return games, 'ESPN'
-
+    """Load games for a date from the prefetched schedule cache.
+    Returns (games_list, source_label).  Zero network calls."""
+    cache = _load_schedule_cache()
+    date_key = target_date.isoformat()  # e.g. "2026-02-19"
+    entry = cache.get('dates', {}).get(date_key)
+    if entry and entry.get('games'):
+        games = [(g['away'], g['home'], g.get('time', '')) for g in entry['games']]
+        source = entry.get('source', 'Cache')
+        return games, source
     return [], None
 
 
@@ -257,6 +232,36 @@ def display_bet_tracker():
     print("=" * 110)
 
 
+STALE_THRESHOLD_HOURS = int(os.environ.get('STALE_HOURS', 12))
+
+
+def _check_cache_staleness(cache_times):
+    """Return list of cache names that are stale, missing, or unknown."""
+    stale, missing = [], []
+    now = datetime.now()
+    for key, label in [('stats', 'Team Stats'), ('injuries', 'Injuries'),
+                       ('news', 'News'), ('rest', 'Rest Penalty'),
+                       ('schedule', 'Schedule'), ('star_tax', 'Star Tax')]:
+        val, _src = cache_times.get(key, ('Missing', ''))
+        if val in ('Missing',):
+            missing.append(label)
+            continue
+        if val in ('Unknown',):
+            stale.append(label)
+            continue
+        # Try to parse the timestamp
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M:%S'):
+            try:
+                ts = datetime.strptime(val.strip(), fmt)
+                age_hours = (now - ts).total_seconds() / 3600
+                if age_hours > STALE_THRESHOLD_HOURS:
+                    stale.append(f"{label} ({int(age_hours)}h old)")
+                break
+            except ValueError:
+                continue
+    return stale, missing
+
+
 def run_ui():
     today_display = datetime.now().strftime("%B %d, %Y")
     custom_counter = 0  # Unique counter for custom matchup GIDs
@@ -273,11 +278,22 @@ def run_ui():
             print("\n" + "="*75)
             print(f"--- 🏀 NBA PRO ENGINE (V3) | {today_display} ---")
             print("--- DATA CACHE FRESHNESS ---")
-            print(f"  Team Stats:   {cache_times.get('stats', 'Unknown')}")
-            print(f"  Injuries:     {cache_times.get('injuries', 'Unknown')}")
-            print(f"  News:         {cache_times.get('news', 'Unknown')}")
-            print(f"  Rest Penalty: {cache_times.get('rest', 'Unknown')}")
+            for label, key in [('Team Stats', 'stats'), ('Injuries', 'injuries'),
+                                ('News', 'news'), ('Rest Penalty', 'rest'),
+                                ('Schedule', 'schedule'), ('Star Tax', 'star_tax')]:
+                ts, src = cache_times.get(key, ('Unknown', ''))
+                src_tag = f"  ({src})" if src else ""
+                print(f"  {label + ':':<14} {ts}{src_tag}")
             print("="*75)
+
+            # Warn if any cache data is stale or missing
+            stale, missing = _check_cache_staleness(cache_times)
+            if missing:
+                print(f"  🚨 MISSING CACHE: {', '.join(missing)}")
+                print(f"     → Run [R] to refresh or: bash fetch_all_nba_data.sh")
+            if stale:
+                print(f"  ⚠️  STALE DATA (>{STALE_THRESHOLD_HOURS}h): {', '.join(stale)}")
+                print(f"     → Run [R] to refresh or: bash fetch_all_nba_data.sh")
 
             schedule = {}
             today = date.today()
@@ -299,7 +315,7 @@ def run_ui():
             choice = input("Enter Command: ").upper()
 
             if choice == 'Q':
-                print("Shutting down. Good luck tonight, Johnny!")
+                print("Shutting down. Happy Betting!")
                 break
 
             elif choice == 'B':
@@ -307,7 +323,7 @@ def run_ui():
                 continue
 
             elif choice == 'R':
-                print("\n🔄 Refreshing all NBA data (stats, injuries, news, rest)...")
+                print("\n🔄 Refreshing all NBA data (stats, injuries, news, rest, schedule)...")
                 script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fetch_all_nba_data.sh')
                 result = subprocess.run(['bash', script_path], capture_output=True, text=True)
                 # Show summary lines to the user
@@ -320,6 +336,7 @@ def run_ui():
                 else:
                     # Reload caches in-memory
                     calculate_pace_and_ratings(force_refresh=True)
+                    invalidate_schedule_cache()
                     print("[✓] All caches reloaded.")
                 continue
 
@@ -362,7 +379,7 @@ def run_ui():
                 choice = input("Enter Command: ").upper()
 
                 if choice == 'Q':
-                    print("Shutting down. Good luck tonight, Johnny!")
+                    print("Shutting down. Happy Betting!")
                     break
                 elif choice == 'B':
                     display_bet_tracker()
@@ -482,7 +499,7 @@ def run_ui():
             else:
                 print("❌ Command not recognized.")
     except KeyboardInterrupt:
-        print("\n[EXIT] Keyboard interrupt received. Shutting down gracefully. Good luck tonight, Johnny!")
+        print("\n[EXIT] Keyboard interrupt received. Shutting down gracefully. Happy Betting!")
 
 if __name__ == "__main__":
     run_ui()

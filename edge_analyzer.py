@@ -22,7 +22,6 @@ import re
 import json
 import difflib
 from datetime import datetime
-from nba_api.stats.static import teams, players
 from nba_analytics import (
     calculate_pace_and_ratings,
     get_injuries,

@@ -45,6 +45,12 @@ else
   exit 1
 fi
 
+# Prefetch NBA schedule (today + 7 days) for fully offline UI
+run_fetcher schedule_prefetch.py
+
+# Prefetch star tax (On/Off plus-minus) for all teams
+run_fetcher star_tax_prefetch.py
+
 # Fetch and cache live odds for CLV tracking (non-fatal if no games)
 echo "[INFO] Fetching NBA odds for CLV tracking..." | tee -a "$LOG"
 if python odds_api.py >> "$LOG" 2>&1; then
@@ -54,7 +60,7 @@ else
 fi
 
 # Final check for all caches
-if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache.json ] && [ -s nba_rest_penalty_cache.csv ]; then
+if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache.json ] && [ -s nba_rest_penalty_cache.csv ] && [ -s nba_schedule_cache.json ] && [ -s nba_star_tax_cache.json ]; then
   echo "" | tee -a "$LOG"
   echo "[SUMMARY] NBA Data Fetch Counts:" | tee -a "$LOG"
   # Parse counts from log
@@ -67,9 +73,13 @@ if [ -s nba_stats_cache.json ] && [ -s nba_injuries.csv ] && [ -s nba_news_cache
   echo "  - Injuries: ${INJURY_COUNT:-0} records" | tee -a "$LOG"
   echo "  - Rest Penalty: ${REST_COUNT:-0} teams" | tee -a "$LOG"
   echo "  - NBA News: ${NEWS_COUNT:-0} items" | tee -a "$LOG"
+  SCHED_COUNT=$(grep -Eo 'Cached [0-9]+ total games' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
+  STAR_TAX_COUNT=$(grep -Eo 'Cached star tax data for [0-9]+ teams' "$LOG" | grep -Eo '[0-9]+' | tail -1 || true)
   echo "  - Odds (CLV): ${ODDS_COUNT:-0} games" | tee -a "$LOG"
+  echo "  - Schedule: ${SCHED_COUNT:-0} games (today + 7 days)" | tee -a "$LOG"
+  echo "  - Star Tax: ${STAR_TAX_COUNT:-0} teams" | tee -a "$LOG"
   echo "" | tee -a "$LOG"
-  echo "[COMPLETE] All NBA data cached successfully. Engine is ready for offline operation." | tee -a "$LOG"
+  echo "[COMPLETE] All NBA data cached successfully. Now run: python nba_engine_ui.py." | tee -a "$LOG"
 else
   echo "[FATAL] One or more caches missing or empty. Data fetch failed." | tee -a "$LOG"
   exit 2
