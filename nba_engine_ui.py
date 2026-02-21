@@ -161,6 +161,11 @@ def display_bet_tracker():
                     clv_idx = hmap.get('CLV')
                     base['closing_line'] = row[cl_idx].strip() if cl_idx is not None and cl_idx < len(row) else ''
                     base['clv'] = row[clv_idx].strip() if clv_idx is not None and clv_idx < len(row) else ''
+                    # Attach preflight status if present
+                    pfc_idx = hmap.get('PreflightCheck')
+                    pfn_idx = hmap.get('PreflightNote')
+                    base['preflight'] = row[pfc_idx].strip() if pfc_idx is not None and pfc_idx < len(row) else ''
+                    base['preflight_note'] = row[pfn_idx].strip() if pfn_idx is not None and pfn_idx < len(row) else ''
                     all_rows.append(base)
 
         if not all_rows:
@@ -284,7 +289,288 @@ def display_bet_tracker():
             print(f"  📈 CLV: ⏳ All bets pending — run ./fetch_all_nba_data.sh odds before tip-off, then update_results.py after")
         elif clv_missing:
             print(f"  📈 CLV: ⚠️  {clv_missing} decided bet{'s' if clv_missing != 1 else ''} missing CLV — were odds fetched before tip-off?")
+
+        # Preflight status summary
+        pf_stamped = sum(1 for r in all_rows if r.get('preflight'))
+        pf_total = len(all_rows)
+        if pf_stamped == pf_total and pf_total > 0:
+            print(f"  🛡️  Preflight: ✅ All {pf_total} bet(s) verified")
+        elif pf_stamped > 0:
+            print(f"  🛡️  Preflight: ⚠️  {pf_stamped}/{pf_total} verified — {pf_total - pf_stamped} unstamped")
+        else:
+            # Check if any row has a preflight_note (backfilled historical)
+            has_notes = any(r.get('preflight_note') for r in all_rows)
+            if has_notes:
+                print(f"  🛡️  Preflight: ℹ️  Historical tracker — retroactive validation not available")
+            # else: columns might not exist yet, skip silently
+
         print("=" * 120)
+
+
+# ── Bet Validation Audit ─────────────────────────────────────────────────
+def validate_historical_bets():
+    """Audit all bet trackers for internal consistency — verifies that the
+    recorded model outputs (Fair, Market, Edge, Kelly, Pick) are mathematically
+    self-consistent.  Flags bets that may have been placed on bad data.
+
+    NOTE: We cannot re-run the prediction model for historical bets because
+    all input data (stats, injuries, rest, star tax, odds) is ephemeral and
+    overwritten daily.  Instead, we validate the RECORDED values against the
+    known formulas that produced them."""
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    files = sorted(glob.glob(os.path.join(base_dir, 'bet_tracker_*.csv')))
+
+    if not files:
+        print("\n  📭 No bet tracker files found.")
+        return
+
+    EDGE_CAP = load_edge_cap()
+
+    print("\n" + "=" * 100)
+    print("  🔍 BET VALIDATION AUDIT — Internal Consistency Check")
+    print("=" * 100)
+    print("  Validates recorded model outputs against known formulas.")
+    print("  ⚠️  Cannot re-run predictions — historical cache data is overwritten daily.")
+    print("  Instead checks: Edge math, Kelly math, pick direction, preflight status,")
+    print("  and cross-references results to identify data-quality patterns.")
+    print("=" * 100)
+
+    all_issues = []          # (file, gid, severity, message)
+    file_summaries = []      # per-file summary tuples
+    # Aggregate stats for preflight-vs-no-preflight comparison
+    pf_results = {'verified': {'W': 0, 'L': 0, 'P': 0}, 'unverified': {'W': 0, 'L': 0, 'P': 0}}
+
+    for filepath in files:
+        fname = os.path.basename(filepath)
+        with open(filepath, 'r', newline='') as f:
+            reader = csv.reader(f)
+            rows_raw = list(reader)
+        if len(rows_raw) < 2:
+            file_summaries.append((fname, 0, 0, 0, 0))
+            continue
+
+        header = rows_raw[0]
+        data = rows_raw[1:]
+        hmap = {h.strip(): i for i, h in enumerate(header)}
+
+        def _get(row, col, default=''):
+            idx = hmap.get(col)
+            if idx is not None and idx < len(row):
+                return row[idx].strip()
+            return default
+
+        n_bets = len(data)
+        n_errors = 0       # hard math failures
+        n_warnings = 0     # soft concerns
+        n_clean = 0
+
+        for row in data:
+            gid = _get(row, 'ID', '?')
+            tag = f"{fname}/{gid}"
+
+            fair_s = _get(row, 'Fair')
+            market_s = _get(row, 'Market')
+            edge_s = _get(row, 'Edge')
+            raw_edge_s = _get(row, 'Raw_Edge')
+            edge_capped_s = _get(row, 'Edge_Capped')
+            kelly_s = _get(row, 'Kelly')
+            pick = _get(row, 'Pick')
+            away = _get(row, 'Away')
+            home = _get(row, 'Home')
+            result = _get(row, 'Result')
+            preflight = _get(row, 'PreflightCheck')
+            preflight_note = _get(row, 'PreflightNote')
+            conf = _get(row, 'Confidence')
+
+            row_issues = []
+
+            # ── 1. Parse core numerics ──────────────────────────────────
+            try:
+                fair = float(fair_s)
+            except (ValueError, TypeError):
+                if fair_s:
+                    row_issues.append(('ERROR', f'Fair={fair_s!r} non-numeric'))
+                fair = None
+            try:
+                market = float(market_s)
+            except (ValueError, TypeError):
+                if market_s:
+                    row_issues.append(('ERROR', f'Market={market_s!r} non-numeric'))
+                market = None
+            try:
+                edge_recorded = float(edge_s)
+            except (ValueError, TypeError):
+                edge_recorded = None
+
+            # ── 2. Edge math: Edge ≈ |Fair - Market| (or capped) ───────
+            if fair is not None and market is not None:
+                expected_raw_edge = round(abs(fair - market), 2)
+
+                # Check raw edge if available
+                if raw_edge_s:
+                    try:
+                        raw_edge_val = float(raw_edge_s)
+                        if abs(raw_edge_val - expected_raw_edge) > 0.05:
+                            row_issues.append(('ERROR', f'Raw_Edge={raw_edge_val} ≠ |Fair−Market|={expected_raw_edge}'))
+                    except ValueError:
+                        pass
+
+                expected_edge = min(expected_raw_edge, EDGE_CAP)
+                if edge_recorded is not None:
+                    if abs(edge_recorded - expected_edge) > 0.05:
+                        # Allow for different edge cap at the time
+                        if abs(edge_recorded - expected_raw_edge) > 0.05:
+                            row_issues.append(('ERROR', f'Edge={edge_recorded} ≠ expected {expected_edge} (|Fair−Market|={expected_raw_edge})'))
+
+                # ── 3. Kelly math ───────────────────────────────────────
+                if kelly_s:
+                    try:
+                        kelly_recorded = float(kelly_s.rstrip('%'))
+                        # For edge-capped bets, use the capped edge for Kelly comparison
+                        # calculate_kelly uses abs(fair-market) internally, so synthesize
+                        # a "capped fair" that produces the right capped edge
+                        effective_edge = expected_edge if edge_recorded is None else edge_recorded
+                        if effective_edge < expected_raw_edge:
+                            # Capped — build a synthetic fair for Kelly calc
+                            capped_fair = market + effective_edge if fair > market else market - effective_edge
+                        else:
+                            capped_fair = fair
+                        expected_kelly = calculate_kelly(market, capped_fair)
+                        if abs(kelly_recorded - expected_kelly) > 0.1:
+                            row_issues.append(('WARN', f'Kelly={kelly_recorded}% ≠ expected {expected_kelly}% (drift={kelly_recorded - expected_kelly:+.2f})'))
+                    except ValueError:
+                        row_issues.append(('WARN', f'Kelly={kelly_s!r} unparseable'))
+
+                # ── 4. Pick direction ───────────────────────────────────
+                if pick and pick not in (away, home):
+                    row_issues.append(('ERROR', f'Pick={pick!r} not in {{Away={away!r}, Home={home!r}}}'))
+                elif pick and away and home:
+                    # Model recommends home if fair < market, away if fair >= market
+                    expected_rec = home if fair < market else away
+                    if pick != expected_rec:
+                        # Not an error — user can override, but worth noting
+                        row_issues.append(('INFO', f'Pick={pick} differs from model rec={expected_rec} (user override)'))
+
+                # ── 5. Edge cap consistency ─────────────────────────────
+                if edge_capped_s:
+                    if edge_capped_s.upper() == 'YES' and expected_raw_edge <= EDGE_CAP:
+                        row_issues.append(('WARN', f'Edge_Capped=YES but raw edge {expected_raw_edge} ≤ cap {EDGE_CAP}'))
+                    elif edge_capped_s.upper() == 'NO' and expected_raw_edge > EDGE_CAP:
+                        row_issues.append(('WARN', f'Edge_Capped=NO but raw edge {expected_raw_edge} > cap {EDGE_CAP}'))
+
+            # ── 6. Preflight status ─────────────────────────────────────
+            if not preflight and not preflight_note:
+                row_issues.append(('WARN', 'No preflight stamp or note'))
+            elif preflight_note and 'Historical' in preflight_note:
+                row_issues.append(('INFO', 'Historical — cannot retroactively validate'))
+
+            # ── 7. Result tracking for preflight comparison ─────────────
+            if result in ('WIN', 'LOSS', 'PUSH'):
+                bucket = 'verified' if preflight else 'unverified'
+                key = result[0]  # W, L, P
+                pf_results[bucket][key] += 1
+
+            # Tally
+            has_error = any(sev == 'ERROR' for sev, _ in row_issues)
+            has_warn = any(sev == 'WARN' for sev, _ in row_issues)
+            if has_error:
+                n_errors += 1
+            elif has_warn:
+                n_warnings += 1
+            else:
+                n_clean += 1
+
+            for sev, msg in row_issues:
+                all_issues.append((fname, gid, sev, msg))
+
+        file_summaries.append((fname, n_bets, n_clean, n_warnings, n_errors))
+
+    # ══════════════════════════════════════════════════════════════════════
+    #  Display results
+    # ══════════════════════════════════════════════════════════════════════
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    total_bets = sum(s[1] for s in file_summaries)
+
+    print(f"\n  📋 TRACKER SUMMARY ({len(files)} file(s), {total_bets} total bets)")
+    print(f"  {'Tracker':<35} {'Bets':>5}  {'Clean':>6}  {'Warn':>5}  {'Error':>6}")
+    print(f"  {'-'*35} {'-'*5}  {'-'*6}  {'-'*5}  {'-'*6}")
+    for fname, n_bets, n_clean, n_warn, n_err in file_summaries:
+        is_today = today_str in fname
+        marker = '📌' if is_today else '  '
+        err_icon = '❌' if n_err else ('⚠️ ' if n_warn else '✅')
+        print(f"  {marker}{err_icon} {fname:<31} {n_bets:>5}  {n_clean:>6}  {n_warn:>5}  {n_err:>6}")
+
+    # ── Issues detail ────────────────────────────────────────────────────
+    errors = [(f, g, s, m) for f, g, s, m in all_issues if s == 'ERROR']
+    warnings = [(f, g, s, m) for f, g, s, m in all_issues if s == 'WARN']
+    infos = [(f, g, s, m) for f, g, s, m in all_issues if s == 'INFO']
+
+    if errors:
+        print(f"\n  ❌ ERRORS ({len(errors)}) — Math inconsistencies in recorded data:")
+        for f, g, sev, msg in errors[:15]:
+            print(f"     {f}/{g}: {msg}")
+        if len(errors) > 15:
+            print(f"     ... and {len(errors) - 15} more")
+
+    if warnings:
+        print(f"\n  ⚠️  WARNINGS ({len(warnings)}) — Data-quality concerns:")
+        for f, g, sev, msg in warnings[:15]:
+            print(f"     {f}/{g}: {msg}")
+        if len(warnings) > 15:
+            print(f"     ... and {len(warnings) - 15} more")
+
+    if infos:
+        print(f"\n  ℹ️  INFO ({len(infos)}):")
+        for f, g, sev, msg in infos[:10]:
+            print(f"     {f}/{g}: {msg}")
+        if len(infos) > 10:
+            print(f"     ... and {len(infos) - 10} more")
+
+    # ── Preflight vs non-preflight performance comparison ────────────────
+    v_w = pf_results['verified']['W']
+    v_l = pf_results['verified']['L']
+    u_w = pf_results['unverified']['W']
+    u_l = pf_results['unverified']['L']
+    v_total = v_w + v_l
+    u_total = u_w + u_l
+
+    if v_total > 0 or u_total > 0:
+        print(f"\n  📊 PREFLIGHT vs NON-PREFLIGHT PERFORMANCE:")
+        if v_total > 0:
+            v_rate = v_w / v_total * 100
+            print(f"     ✅ Verified bets:   {v_w}W-{v_l}L ({v_rate:.1f}% win rate)")
+        else:
+            print(f"     ✅ Verified bets:   No decided bets yet")
+        if u_total > 0:
+            u_rate = u_w / u_total * 100
+            print(f"     ⚠️  Unverified bets: {u_w}W-{u_l}L ({u_rate:.1f}% win rate)")
+        else:
+            print(f"     ⚠️  Unverified bets: No decided bets yet")
+        if v_total > 0 and u_total > 0:
+            diff = (v_w / v_total * 100) - (u_w / u_total * 100)
+            if diff > 0:
+                print(f"     → Verified bets outperform by {diff:+.1f}pp")
+            elif diff < 0:
+                print(f"     → Unverified bets outperform by {abs(diff):.1f}pp (small sample?)")
+            else:
+                print(f"     → Identical win rates")
+
+    # ── Verdict ──────────────────────────────────────────────────────────
+    print("\n" + "=" * 100)
+    if errors:
+        print(f"  🔴 AUDIT RESULT: {len(errors)} bet(s) have math inconsistencies in recorded data.")
+        print(f"     These bets may have been placed with stale or corrupted inputs.")
+        print(f"     Review the errors above — the recorded Fair/Market/Edge values don't add up.")
+    elif warnings:
+        print(f"  🟡 AUDIT RESULT: All math checks pass. {len(warnings)} warning(s) to review.")
+        if any('No preflight' in m for _, _, _, m in warnings):
+            print(f"     Some bets lack preflight verification — run: python preflight_check.py --backfill")
+    else:
+        print(f"  🟢 AUDIT RESULT: All {total_bets} bet(s) internally consistent. No anomalies detected.")
+    print("=" * 100)
+
+    input("\n  Press Enter to return to the main menu...")
 
 
 # ── Pre-Tipoff Review ────────────────────────────────────────────────────
@@ -693,7 +979,7 @@ def run_ui():
                 print("💡 TIP: Type 'U' to view upcoming games, or 'C' for a custom matchup.")
 
             print("-" * 75)
-            print("COMMANDS: [G#] (Analyze) | [P] (Pre-Tip Review) | [B] (Bets) | [U] (Upcoming) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
+            print("COMMANDS: [G#] (Analyze) | [P] (Pre-Tip Review) | [B] (Bets) | [V] (Validate) | [U] (Upcoming) | [R] (Refresh) | [C] (Custom) | [Q] (Quit)")
             choice = input("Enter Command: ").upper()
 
             if choice == 'Q':
@@ -706,6 +992,10 @@ def run_ui():
 
             elif choice == 'P':
                 display_pretipoff_review()
+                continue
+
+            elif choice == 'V':
+                validate_historical_bets()
                 continue
 
             elif choice == 'R':

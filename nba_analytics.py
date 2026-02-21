@@ -115,6 +115,8 @@ def calculate_pace_and_ratings(season='2025-26', last_n_games=10, force_refresh=
             with open(CACHE_FILE, 'r') as f:
                 cache = json.load(f)
             df = pd.DataFrame({col: list(col_dict.values()) for col, col_dict in cache['data'].items()})
+            # Normalize team names (NBA.com uses 'LA Clippers' but everything else uses 'Los Angeles Clippers')
+            df['TEAM_NAME'] = df['TEAM_NAME'].replace({'LA Clippers': 'Los Angeles Clippers'})
             if 'TEAM_ID' not in df.columns:
                 df['TEAM_ID'] = df['TEAM_NAME'].map(TEAM_NAME_TO_ID)
             cache_time, _ = get_cache_times()['stats']
@@ -171,7 +173,7 @@ def get_star_tax_weighted(team_id, out_players):
     Supports both player-name keyed (Selenium) and player-ID keyed (nba_api) caches."""
     if not out_players:
         return 0
-    weights = {'out': 1.0, 'doubtful': 0.9, 'questionable': 0.5, 'probable': 0.1}
+    weights = {'out': 1.0, 'doubtful': 0.9, 'questionable': 0.5, 'game time decision': 0.5, 'probable': 0.1, 'day-to-day': 0.5}
     total_tax = 0
     try:
         if not os.path.exists(STAR_TAX_CACHE_FILE):
@@ -179,7 +181,7 @@ def get_star_tax_weighted(team_id, out_players):
             return None
         with open(STAR_TAX_CACHE_FILE, 'r') as f:
             cache = json.load(f)
-        team_data = cache.get('teams', {}).get(str(team_id), {})
+        team_data = cache.get('teams', {}).get(str(int(team_id)), {})
         player_impacts = team_data.get('players', {})
         if not player_impacts:
             if 'error' in team_data:
@@ -194,7 +196,8 @@ def get_star_tax_weighted(team_id, out_players):
             lookup_by_name = any(not k.isdigit() for k in player_impacts.keys())
 
         for p_info in out_players:
-            weight = next((v for k, v in weights.items() if k in p_info['status']), 0)
+            status_lower = p_info['status'].lower()
+            weight = next((v for k, v in weights.items() if k in status_lower), 0)
             if weight <= 0:
                 continue
 
@@ -264,7 +267,7 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
         'Warriors': 'Golden State Warriors',
         'Rockets': 'Houston Rockets',
         'Pacers': 'Indiana Pacers',
-        'Clippers': 'LA Clippers',
+        'Clippers': 'Los Angeles Clippers',
         'Lakers': 'Los Angeles Lakers',
         'Grizzlies': 'Memphis Grizzlies',
         'Heat': 'Miami Heat',
@@ -305,12 +308,14 @@ def predict_nba_spread(away_team, home_team, force_refresh=False):
     a_rest = get_rest_penalty(a_row['TEAM_ID'])
     news = get_news()
 
-    # Flag if any player status is 'out', 'late scratch', or 'day-to-day' for today
+    # Flag if any player status indicates out/late scratch/day-to-day for today
     flag = False
     today = datetime.now().strftime('%b %d')
     for team, plist in injuries.items():
         for p in plist:
-            if p['status'] in ['out', 'late scratch', 'day-to-day'] and today in p.get('date', ''):
+            status_lower = p['status'].lower()
+            date_str = p.get('date', '')
+            if status_lower in ['out', 'late scratch', 'day-to-day', 'out for the season'] and (not date_str or today in date_str):
                 flag = True
     # Also flag if news contains late scratch
     for item in news:
@@ -385,36 +390,62 @@ def log_bet(gid, away, home, f_line, m_line, edge, rec, kelly, confidence='', be
     if raw_edge is None:
         raw_edge = edge  # backward compat: if not supplied, raw == capped
     rows = []
-    header = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Raw_Edge','Edge_Capped','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
+    header = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Raw_Edge','Edge_Capped','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes','ClosingLine','CLV','PreflightCheck','PreflightNote']
+    prev_header_22 = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Raw_Edge','Edge_Capped','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes','ClosingLine','CLV']
+    prev_header_20 = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Raw_Edge','Edge_Capped','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
     prev_header_18 = ['ID','Timestamp','Away','Home','Fair','Market','Edge','Kelly','Confidence','Pick','Type','Book','Odds','Bet','ToWin','Result','Payout','Notes']
     prev_header_14 = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Book','Odds','Bet','Result','Payout','Notes']
     old_header_10 = ['ID','Away','Home','Fair','Market','Edge','Kelly','Pick','Result','Notes']
+    all_known_headers = [header, prev_header_22, prev_header_20, prev_header_18, prev_header_14, old_header_10]
     # Read existing rows if file exists
     if os.path.isfile(filename):
         with open(filename, 'r', newline='') as f:
             reader = csv.reader(f)
             rows = list(reader)
         # Remove header if present (support old formats)
-        if rows and rows[0] in (header, prev_header_18, prev_header_14, old_header_10):
+        if rows and rows[0] in all_known_headers:
             rows = rows[1:]
-    # Migrate old rows to 20-column format
+    # Migrate old rows to 24-column format
     migrated_rows = []
     for row in rows:
         if len(row) == 10:
             # Old 10-col: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Result,Notes]
-            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[5], 'NO', row[6], '', row[7], 'Spread', '', '', '', '', row[8], '', row[9] if len(row) > 9 else ''])
+            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[5], 'NO', row[6], '', row[7], 'Spread', '', '', '', '', row[8], '', row[9] if len(row) > 9 else '', '', '', '', ''])
         elif len(row) == 14:
             # Prev 14-col: [ID,Away,Home,Fair,Market,Edge,Kelly,Pick,Book,Odds,Bet,Result,Payout,Notes]
-            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[5], 'NO', row[6], '', row[7], 'Spread', row[8], row[9], row[10], _calc_to_win(row[9], row[10]), row[11], row[12], row[13]])
+            migrated_rows.append([row[0], '', row[1], row[2], row[3], row[4], row[5], row[5], 'NO', row[6], '', row[7], 'Spread', row[8], row[9], row[10], _calc_to_win(row[9], row[10]), row[11], row[12], row[13], '', '', '', ''])
         elif len(row) == 18:
             # Prev 18-col: insert Raw_Edge=Edge, Edge_Capped=NO after Edge column (index 6)
-            migrated_rows.append(row[:7] + [row[6], 'NO'] + row[7:])
+            migrated_rows.append(row[:7] + [row[6], 'NO'] + row[7:] + ['', '', '', ''])
+        elif len(row) == 20:
+            # Prev 20-col: missing ClosingLine,CLV,PreflightCheck,PreflightNote
+            migrated_rows.append(row + ['', '', '', ''])
+        elif len(row) == 22:
+            # Prev 22-col: has ClosingLine,CLV but missing PreflightCheck,PreflightNote
+            migrated_rows.append(row + ['', ''])
         else:
-            migrated_rows.append(row)
+            # Ensure row is padded to 24 cols
+            migrated_rows.append(row + [''] * max(0, 24 - len(row)))
     rows = migrated_rows
+
+    # ── Check preflight status: if preflight passed today, stamp the new bet ──
+    preflight_ts = ''
+    preflight_note = ''
+    preflight_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.preflight_status.json')
+    try:
+        if os.path.isfile(preflight_file):
+            with open(preflight_file) as pf:
+                pf_data = json.load(pf)
+            pf_date = pf_data.get('date', '')
+            if pf_date == now.strftime('%Y-%m-%d') and pf_data.get('passed'):
+                preflight_ts = pf_data.get('timestamp', '')
+                preflight_note = f"PASS ({pf_data.get('checks', '?')}✓ {pf_data.get('warnings', 0)}⚠)"
+    except (IOError, json.JSONDecodeError, KeyError):
+        pass
+
     # Remove any existing entry for this game (ID, Away, Home)
     capped_str = 'YES' if edge_capped else 'NO'
-    new_row = [gid, timestamp, away, home, f_line, m_line, edge, raw_edge, capped_str, f"{kelly}%", confidence, rec, bet_type, book, odds, bet_amount, to_win, 'PENDING', '', notes]
+    new_row = [gid, timestamp, away, home, f_line, m_line, edge, raw_edge, capped_str, f"{kelly}%", confidence, rec, bet_type, book, odds, bet_amount, to_win, 'PENDING', '', notes, '', '', preflight_ts, preflight_note]
     rows = [row for row in rows if not (len(row) >= 4 and row[0] == gid and row[2] == away and row[3] == home)]
     rows.append(new_row)
     # Write back with header

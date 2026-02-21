@@ -18,7 +18,27 @@
 
 With no argument, this runs all scrapers (team stats, injuries, rest penalties, news, schedule, star tax, and live odds) and caches the results locally. Pass a feed name (or comma-separated list) to refresh only specific data — ideal for quick pre-tipoff updates without re-running the full pipeline.
 
-### 2. Run the Prediction Engine
+### 2. Run Pre-Flight Check _(recommended)_
+
+After fetching data, validate the entire pipeline before placing bets:
+
+```bash
+python preflight_check.py              # Full 60-check validation + stamp tracker
+python preflight_check.py --quick      # Data feeds + pipeline only
+python preflight_check.py --backfill   # Add preflight columns to ALL historical trackers
+```
+
+The script checks all 8 data feeds for freshness, value ranges, and team name consistency, spot-checks model calculations, and validates bet tracker integrity. If any check fails, a **"HOW TO FIX"** box prints the exact remediation steps.
+
+**On success (0 failures):** Today's bet tracker is auto-stamped with a `PreflightCheck` timestamp and `PreflightNote` (e.g., `PASS (57✓ 3⚠)`). New bets logged via the engine are also auto-stamped from the saved preflight status. This provides a verifiable audit trail proving data was validated before each bet was placed.
+
+**Chain with the engine so it won't launch if validation fails:**
+
+```bash
+python preflight_check.py && python nba_engine_ui.py
+```
+
+### 3. Run the Prediction Engine
 
 ```bash
 python nba_engine_ui.py
@@ -83,6 +103,7 @@ G9  Denver Nuggets         @ Portland Trail Blazers 10:00 PM
 | `U#`    | Analyze an upcoming game (e.g., `U1`, `U12`) — **preview mode**, no bet logging                    |
 | `B`     | View bet tracker history — select a day or all combined, see P&L summary (loops back; `Q` to exit) |
 | `P`     | Pre-Tipoff Review — compare fresh data against placed bets (injuries, line movement, action recs)  |
+| `V`     | Validate Bets — audit ALL trackers for math consistency, preflight coverage, and performance splits |
 | `C`     | Custom matchup — enter any two teams for analysis                                                  |
 | `R`     | Refresh all data caches (stats, injuries, news, rest, odds)                                        |
 | `Q`     | Quit                                                                                               |
@@ -94,6 +115,10 @@ python update_results.py
 ```
 
 Auto-fetches final scores from the NBA API and fills in WIN/LOSS/PUSH + Payout. Also populates **ClosingLine** and **CLV** (Closing Line Value) from cached odds — see CLV section below.
+
+> **CLV Sign Convention:** CLV is calculated from the bettor’s perspective — positive means you beat the closing line, regardless of whether you bet the home or away side. For AWAY picks: `CLV = closing − market`. For HOME picks: `CLV = market − closing`.
+
+> **Pre-populated CLV:** CLV is now populated as soon as closing odds are cached, even before the game finishes. Run `./fetch_all_nba_data.sh odds` 10–15 min before tip-off, then `python update_results.py` to lock in CLV for all PENDING bets.
 
 ### 4. Analyze Performance
 
@@ -146,7 +171,7 @@ When logging a bet in the engine UI, you'll be prompted for:
 | Odds       | `-110`       | American odds — optional                            |
 | Bet amount | `50`         | Dollar amount — optional                            |
 
-These are saved in the bet tracker CSV along with auto-recorded **Timestamp**, **Confidence** grade, and **ToWin** (calculated from odds × stake). When `update_results.py` populates WIN/LOSS, it auto-calculates the **Payout** column:
+These are saved in the bet tracker CSV along with auto-recorded **Timestamp**, **Confidence** grade, **ToWin** (calculated from odds × stake), and **PreflightCheck/PreflightNote** columns. When `update_results.py` populates WIN/LOSS, it auto-calculates the **Payout** column:
 
 - **WIN at -110**: Bet $50 → Payout +$45.45 (profit)
 - **LOSS**: Bet $50 → Payout -$50.00
@@ -172,7 +197,26 @@ The combined view prefixes each bet ID with the tracker date (e.g., `2026-02-11/
 
 ---
 
-## 💵 Bankroll Management
+## � Validating Historical Bets
+
+Use the `[V]` command to audit ALL bet trackers for internal consistency. This answers the question: *"Were any of my bets placed on bad data?"*
+
+**Why can't we re-run predictions?** Historical cache data (stats, injuries, rest, star tax, odds) is overwritten daily. We cannot recreate what the data looked like on a past date.
+
+**What we CAN check:** The recorded model outputs (Fair, Market, Edge, Kelly, Pick) in each tracker row. The audit verifies:
+
+1. **Edge math** — `Edge ≈ |Fair − Market|` (accounting for edge cap)
+2. **Kelly formula** — recorded Kelly matches `calculate_kelly(market, fair)` with capped edge
+3. **Pick direction** — pick aligns with `home if fair < market else away` (flags user overrides as INFO)
+4. **Edge-cap consistency** — `Edge_Capped=YES/NO` matches whether raw edge exceeds the cap
+5. **Preflight coverage** — flags bets without a preflight stamp or note
+6. **Performance split** — compares win rates between preflight-verified and unverified bets
+
+Any bet where the math doesn't add up is flagged as a potential bad-data placement. These are bets where the model may have been running with stale/corrupted inputs.
+
+---
+
+## �💵 Bankroll Management
 
 Run `python post_mortem.py` → option **[5] Bankroll Tracker**.
 
@@ -258,34 +302,37 @@ For split slates (e.g., 7 PM ET + 10 PM ET tips), run `./fetch_all_nba_data.sh o
   ── MORNING ──────────────────────────────────────────────
   1. RUN: ./fetch_all_nba_data.sh          (all feeds)
      ↓
-  2. RUN: python nba_engine_ui.py
+  2. RUN: python preflight_check.py        (validate all data)
+     ↓  ── if FAILs: fix using printed steps, re-run preflight
+     ↓  ── if all green: proceed
+  3. RUN: python nba_engine_ui.py
      ↓
-  3. Browse upcoming games with [U] — scout early
+  4. Browse upcoming games with [U] — scout early
      ↓
-  4. Review HIGH EDGE games (5+ points, HIGH confidence)
+  5. Review HIGH EDGE games (5+ points, HIGH confidence)
      ↓
-  5. Enter market line → get recommendation
+  6. Enter market line → get recommendation
      ↓
-  6. Enter sportsbook, odds, bet amount
+  7. Enter sportsbook, odds, bet amount
 
   ── PRE-TIPOFF (10-15 min before first tip) ─────────────
-  7. RUN: ./fetch_all_nba_data.sh odds,injuries (CLV + late scratches)
+  8. RUN: ./fetch_all_nba_data.sh odds,injuries (CLV + late scratches)
      ↓
-  8. RUN: [P] Pre-Tipoff Review in engine UI
+  9. RUN: [P] Pre-Tipoff Review in engine UI
      → Shows injury changes, line movement, updated edge
      → Action per bet: 🟢 HOLD / 🟡 REVIEW / 🔴 HEDGE
      ↓
-  9. Act on recommendations — hold, hedge, or cash out
+ 10. Act on recommendations — hold, hedge, or cash out
      ↓
- 10. Place any new bets at your sportsbook
+ 11. Place any new bets at your sportsbook
 
   ── LATE WINDOW (if split slate, e.g. 10 PM tips) ──────
- 11. RUN: ./fetch_all_nba_data.sh odds     (2nd CLV snapshot)
+ 12. RUN: ./fetch_all_nba_data.sh odds     (2nd CLV snapshot)
 
-  ── AFTER GAMES ─────────────────────────────────────────
- 12. RUN: python update_results.py         (scores + CLV)
+  ── AFTER GAMES ─────────────────────────────────────────────
+ 13. RUN: python update_results.py         (scores + CLV)
      ↓
- 13. Review with [B] in engine or python post_mortem.py
+ 14. Review with [B] in engine or python post_mortem.py
 ```
 
 ---
@@ -298,7 +345,8 @@ For split slates (e.g., 7 PM ET + 10 PM ET tips), run `./fetch_all_nba_data.sh o
 | `nba_rest_penalty_cache.csv` | Rest/fatigue penalties        | `./fetch_all_nba_data.sh rest`     |
 | `nba_stats_cache.json`       | Team efficiency ratings       | `./fetch_all_nba_data.sh stats`    |
 | `odds_cache.json`            | Live spreads for CLV tracking | `./fetch_all_nba_data.sh odds`     |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + real $ | Daily                              |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + preflight audit trail | Daily                              |
+| `preflight_check.py`         | Pre-bet pipeline validation + tracker stamping | Run daily before betting           |
 | `schedule_scraper.py`        | Multi-source schedule tool    | On demand                          |
 | `bankroll.json`              | Bankroll config               | Set once, auto-maintained          |
 | `.env`                       | API keys (Odds API)           | Set once                           |

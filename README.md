@@ -1,14 +1,27 @@
-# 🏀 NBA Predictive Analytics Engine (v3.1 — Cache-Only Architecture)
+# 🏀 NBA Predictive Analytics Engine (v3.2 — Hardened Pipeline)
 
 This README covers the features, technical architecture, mathematical modeling, and deployment steps for the NBA Prediction Engine (engine).
 
 ### **Overview**
 
-The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-fidelity point spread predictions. Unlike basic models that use season averages, this engine prioritizes "Current Form" and "Immediate Context" to find market inefficiencies. It leverages the **NBA's Four-Factors** and advanced efficiency ratings to calculate a "Fair Line" (Projected Spread) for daily matchups.
+The **NBA Pro Engine (V3.2)** is a situational analytics tool designed for high-fidelity point spread predictions. Unlike basic models that use season averages, this engine prioritizes "Current Form" and "Immediate Context" to find market inefficiencies. It leverages the **NBA's Four-Factors** and advanced efficiency ratings to calculate a "Fair Line" (Projected Spread) for daily matchups.
 
-**v3.1** is a ground-up reliability and performance overhaul. The engine now runs entirely off pre-cached data — **zero live API calls** are made from the UI. All data is fetched by dedicated prefetch scripts (`fetch_all_nba_data.sh`), and the UI reads only from local cache files. This eliminates API timeouts, rate limits, and network dependency during analysis, cutting startup time from **30+ seconds to under 1 second**.
+**v3.2** builds on v3.1's cache-only architecture with a hardened data pipeline, comprehensive team-name normalization, corrected CLV calculations, and a new **pre-flight validation system** (`preflight_check.py`) that audits all 8 data feeds before you place any bets. The engine now runs entirely off pre-cached data — **zero live API calls** are made from the UI. All data is fetched by dedicated prefetch scripts (`fetch_all_nba_data.sh`), and the UI reads only from local cache files. This eliminates API timeouts, rate limits, and network dependency during analysis, cutting startup time from **30+ seconds to under 1 second**.
 
-### **What Changed in v3.1**
+### **What Changed in v3.2** (from v3.1)
+
+| Area               | Before (v3.1)                                  | After (v3.2)                                                                   |
+| ------------------ | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Team Names**     | "LA Clippers" leaked through 5+ files          | Canonical "Los Angeles Clippers" everywhere; normalization maps in all scrapers |
+| **Injury Scraper** | Fragile single-table parser                    | Per-team section parser with `CBS_TEAM_MAP` (35 aliases)                       |
+| **CLV Calculation** | Raw sign (always `closing - market`)           | Bettor-perspective sign (positive = you beat the close, regardless of pick side) |
+| **CLV Timing**     | Only populated after game finishes             | Pre-populated for PENDING bets as soon as closing odds are cached              |
+| **Star Tax**       | Missing `game time decision` / `day-to-day`    | All 6 injury statuses weighted; case-insensitive matching                      |
+| **Odds Lookup**    | Nickname-only matching                         | Accepts full team names + nicknames; matches against `away_full`/`home_full`   |
+| **Preflight Check** | —                                              | New 59-check validation script (`preflight_check.py`) with remediation guide   |
+| **Preflight Stamp** | —                                              | Bet trackers auto-stamped with preflight timestamp; `--backfill` for historical |
+
+### **What Changed in v3.1** (from v3.0)
 
 | Area             | Before (v3.0)                                 | After (v3.1)                                                  |
 | ---------------- | --------------------------------------------- | ------------------------------------------------------------- |
@@ -33,6 +46,7 @@ The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-
 - **Upcoming Games Browser:** `[U]` command displays the next 7 days of NBA games with selectable game IDs for pre-game research. Upcoming games run in **preview mode** (no bet logging) to encourage re-analysis with fresh data on game day. After each analysis, the upcoming list redisplays so you can analyze another game. Press `Q` to return to the main menu.
 - **Bet Tracker Viewer:** `[B]` command displays a formatted table of all bets from any tracker file (or all combined), with per-bet details and a P&L summary including record, win rate, net profit, and ROI. After viewing, the tracker list redisplays so you can pick another. Press `Q` to return to the main menu.
 - **Pre-Tipoff Review:** `[P]` command compares fresh post-fetch data against your placed bets. For each bet it shows new injuries (OUT/GTD), line movement (current market vs your logged line), recalculated edge using the live fair line, and an action suggestion (🟢 HOLD / 🟡 REVIEW / 🔴 HEDGE). Run `./fetch_all_nba_data.sh odds,injuries` first, then `[P]` to see what changed.
+- **Bet Validation Audit:** `[V]` command audits ALL bet trackers for internal consistency — verifies Edge math (`|Fair − Market|`), Kelly formula, pick direction, edge-cap flags, and preflight stamp coverage. Compares win rates between preflight-verified and unverified bets. Flags any bets where the recorded numbers don't add up, indicating possible stale/corrupted inputs at bet time.
 - **Optimized Performance:** All analysis runs on local cached data — no network latency, no retries.
 - **Kelly Criterion Integration:** Calculates conservative bankroll risk for every edge found.
 - **CLV Tracking:** Fetches live odds from The Odds API to measure Closing Line Value — the gold standard for proving real edge.
@@ -42,7 +56,7 @@ The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-
 
 | File/Folder                      | Purpose                                                                                                                                                                                                                                                                        |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `nba_engine_ui.py`               | Main command-line interface. Reads schedule from cached JSON (ESPN-sourced). Supports `[G#]` analysis, `[P]` pre-tipoff review, `[U]` upcoming games, `[B]` bet tracker viewer, `[C]` custom matchups, `[R]` refresh all caches, and graceful Ctrl+C exit. Zero network calls. |
+| `nba_engine_ui.py`               | Main command-line interface. Reads schedule from cached JSON (ESPN-sourced). Supports `[G#]` analysis, `[P]` pre-tipoff review, `[V]` bet validation audit, `[U]` upcoming games, `[B]` bet tracker viewer, `[C]` custom matchups, `[R]` refresh all caches, and graceful Ctrl+C exit. Zero network calls. |
 | `nba_analytics.py`               | Core analytics logic and spread prediction. Bayesian Star Tax, late-scratch detection, fatigue adjustments. Reads exclusively from pre-fetched cache files.                                                                                                                    |
 | `nba_teams_static.py`            | Local static module with all 30 NBA teams — IDs, names, abbreviations, nicknames. Replaces `nba_api.stats.static` with zero network dependency.                                                                                                                                |
 | `schedule_prefetch.py`           | Prefetches today + 7 days of NBA schedule from ESPN (primary) with NBA.com fallback. Writes `nba_schedule_cache.json`.                                                                                                                                                         |
@@ -57,6 +71,7 @@ The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-
 | `update_results.py`              | Auto-fetches final scores from ESPN JSON API and updates bet tracker CSVs with WIN/LOSS/PUSH results. Also populates CLV (Closing Line Value) from cached odds.                                                                                                                |
 | `odds_api.py`                    | Fetches live NBA spreads from The Odds API and caches them for CLV tracking. Run via `fetch_all_nba_data.sh` or standalone.                                                                                                                                                    |
 | `post_mortem.py`                 | Post-game analysis tool for reviewing bet outcomes and model accuracy.                                                                                                                                                                                                         |
+| `preflight_check.py`             | Pre-bet validation utility — 60 checks across 12 sections. Audits all 8 data feeds, cross-checks consistency, spot-checks model calculations, and validates bet tracker integrity. Stamps bets with preflight verification timestamp on success. Supports `--backfill` to add preflight columns to historical trackers.  |
 | `fetch_all_nba_data.sh`          | Master pipeline script — runs all 8 prefetchers in order, validates 6 core caches, reports summary. Accepts an optional argument to fetch a single feed (e.g., `odds`, `injuries`) or comma-separated combo (e.g., `odds,injuries`). With no argument, refreshes everything.   |
 | `.env.example`                   | Template for environment config. Contains `ODDS_API_KEY` for CLV tracking and `STALE_HOURS` for cache freshness threshold (default: 12).                                                                                                                                       |
 | `nba_stats_cache.json`           | Cached NBA team advanced stats (auto-generated by `nba_data_fetcher_advanced.py`). Source: NBA.com.                                                                                                                                                                            |
@@ -71,6 +86,7 @@ The **NBA Pro Engine (V3.1)** is a situational analytics tool designed for high-
 | `text_to_image.py`               | Renders terminal text output as a full-length PNG screenshot with color-coded lines. Usage: `python text_to_image.py <input.txt> [output.png]`                                                                                                                                 |
 | `requirements.txt`               | Python dependencies for the project. Note: `nba_api` has been fully removed.                                                                                                                                                                                                   |
 | `BETTING_GUIDE.md`               | Guide to using the engine for betting, including manual steps and best practices.                                                                                                                                                                                              |
+| `CHANGELOG.md`                   | Version history and detailed change log for all bug fixes, new features, and breaking changes.                                                                                                                                                                                 |
 | `README.md`                      | This file.                                                                                                                                                                                                                                                                     |
 
 ---
@@ -137,7 +153,19 @@ Follow these steps to get the most out of the NBA Prediction Engine:
      - `./fetch_all_nba_data.sh odds,injuries` — comma-separated combo
      - Also: `stats`, `news`, `schedule`, `rest`, `startax`
 
-2. **Analyze Games and Generate Recommendations**
+2. **Run Pre-Flight Check** _(recommended)_
+   - After fetching data, run `python preflight_check.py` to validate the entire pipeline before placing any bets.
+   - The script performs **60 checks across 12 sections**: data freshness, value ranges, team name consistency, model calculation spot-checks, bet tracker integrity, and pipeline dependencies.
+   - If any check fails (`❌ FAIL`), a **"HOW TO FIX"** box is printed at the bottom with the exact remediation steps.
+   - On success (0 failures), today's bet tracker is **auto-stamped** with the preflight timestamp and result. New bets logged via the engine are also auto-stamped from the saved status.
+   - Use `--quick` to skip model spot-checks and bet tracker validation (data feeds + pipeline only).
+   - Use `--backfill` to retroactively add preflight columns to historical trackers (notes that cache data is unavailable for past dates).
+   - **Tip:** Chain the preflight with the engine so it won't launch if validation fails:
+     ```bash
+     python preflight_check.py && python nba_engine_ui.py
+     ```
+
+3. **Analyze Games and Generate Recommendations**
    - Run the engine: `python nba_engine_ui.py`
    - The UI displays today's NBA schedule from the pre-cached ESPN schedule (sub-second load).
    - The **DATA CACHE FRESHNESS** banner shows the timestamp and source of every cache, with warnings if any data is stale (configurable via `STALE_HOURS` in `.env`).
@@ -190,6 +218,7 @@ This workflow ensures your predictions are based on the most current cached data
 | Time                        | Command                                 | Purpose                                |
 | --------------------------- | --------------------------------------- | -------------------------------------- |
 | Morning                     | `./fetch_all_nba_data.sh`               | Full refresh of all 7 feeds            |
+| After morning fetch         | `python preflight_check.py`             | Validate all feeds before betting      |
 | 10–15 min before early tips | `./fetch_all_nba_data.sh odds,injuries` | Closing line snapshot + late scratches |
 | After early tip fetch       | `[P]` in engine UI                      | Pre-tipoff review of placed bets       |
 | 10–15 min before late tips  | `./fetch_all_nba_data.sh odds`          | 2nd CLV snapshot for late-window games |
@@ -211,6 +240,8 @@ For a single-window slate (all games tip within ~1 hour), one pre-tip `odds,inju
 >
 > **📒 Bet Tracker Viewer:** Use the `[B]` command to review your betting history without leaving the engine. It lists all `bet_tracker_*.csv` files with bet counts, lets you select one (or `A` for all combined), and displays a formatted table with matchup, pick, edge, odds, bet amount, result, payout, and notes. A P&L summary shows your record, win rate, total wagered, net profit/loss, and ROI. The combined view prefixes each bet ID with the tracker date for easy cross-referencing.>
 > **🔍 Pre-Tipoff Review:** Use the `[P]` command after running `./fetch_all_nba_data.sh odds,injuries` to audit your placed bets against fresh data. For each bet, the review shows: (1) injury changes — new OUT or GTD players since you placed the bet, (2) line movement — how the market spread has shifted, (3) updated edge — recalculated fair line vs current market, and (4) action suggestion — 🟢 HOLD (edge stable/improved), 🟡 REVIEW (edge thin or situation changed), or 🔴 HEDGE (edge collapsed + key player OUT). A summary at the bottom tallies HOLD/REVIEW/HEDGE counts across all bets.
+>
+> **🔬 Bet Validation Audit:** Use the `[V]` command to audit ALL historical bet trackers for internal consistency. The audit cannot re-run predictions (historical cache data is overwritten daily), but instead validates the recorded model outputs against known formulas: (1) Edge math — `Edge ≈ |Fair − Market|`, raw edge vs capped edge, (2) Kelly formula match, (3) pick direction matches Fair vs Market, (4) edge-cap flag consistency, (5) preflight stamp coverage. It also compares win rates between preflight-verified and unverified bets to identify data-quality patterns. Any bets where the numbers don't add up are flagged as potential bad-data placements.
 
 ---
 
@@ -357,6 +388,30 @@ These scripts provide additional analysis, data checks, and manual overrides for
     python schedule_scraper.py              # Compare sources for today
     python schedule_scraper.py 2026-02-22   # Compare sources for a specific date
     ```
+
+- **preflight_check.py**
+  - Pre-bet validation utility — audits all 8 data feeds, cross-checks team name consistency, spot-checks model calculations, and validates bet tracker integrity. 60 checks across 12 sections. Prints a PASS/WARN/FAIL summary with actionable remediation steps for any failure.
+  - **Preflight Stamping:** On a successful run (0 failures), each bet in today's tracker is stamped with a `PreflightCheck` timestamp and `PreflightNote` (e.g., `PASS (57✓ 3⚠)`). New bets logged via the engine are auto-stamped from the saved status file (`.preflight_status.json`).
+  - Usage:
+    ```bash
+    python preflight_check.py              # Full validation + stamp today's tracker
+    python preflight_check.py --quick      # Data feeds + pipeline only (skip model & tracker)
+    python preflight_check.py --fix        # Auto re-run scrapers for stale/missing data, then validate
+    python preflight_check.py --backfill   # Add PreflightCheck/PreflightNote columns to ALL historical trackers
+    ```
+  - **Sections covered:**
+    1. Team Stats — JSON parse, freshness, column presence, team count, value ranges (PACE 92–108, ORtg/DRtg 100–125, NET -20 to +20)
+    2. Injuries — file exists, freshness, required columns, team name canonicalization
+    3. Star Tax — JSON parse, freshness, 30-team coverage, player count, impact range outliers
+    4. Rest Penalties — freshness, 30 teams, canonical names, penalty range (−4 to +4)
+    5. Odds — JSON parse, game count, spread variance & book coverage, freshness
+    6. Schedule — JSON parse, freshness, today's games present, team names canonical
+    7. News — JSON parse, freshness, article count & structure
+    8. Bankroll Config — JSON parse, required fields, value sanity
+    9. Cross-Data Consistency — injury teams ⊂ stats teams, odds names canonical, schedule ⊂ odds, schedule ⊂ star tax
+    10. Model Spot-Check — runs `predict_nba_spread()` on up to 5 today's games, validates fair line/edge/Kelly ranges
+    11. Bet Tracker Integrity — columns, pick matches teams, numeric values, result values, CLV magnitude
+    12. Pipeline Files — all 13 scripts present, `.env` API key, fetch script, static teams module
 
 These tools are optional but recommended for power users who want deeper insight, custom data, or extra validation before betting.
 

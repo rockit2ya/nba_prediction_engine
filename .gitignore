@@ -39,8 +39,12 @@ terminal_*.png
 # Environment / secrets
 .env
 
+# Preflight status (transient state file)
+.preflight_status.json
+
 # Test scripts (ad-hoc verification)
 _test_*.py
+_trace_*.py
 
 # Misc
 .stats_timestamp

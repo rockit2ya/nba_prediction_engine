@@ -237,9 +237,14 @@ def update_tracker(filepath):
         df['ClosingLine'] = ''
     if 'CLV' not in df.columns:
         df['CLV'] = ''
+    # Ensure PreflightCheck and PreflightNote columns exist
+    if 'PreflightCheck' not in df.columns:
+        df['PreflightCheck'] = ''
+    if 'PreflightNote' not in df.columns:
+        df['PreflightNote'] = ''
 
     # Ensure string columns don't get inferred as float64
-    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout', 'Timestamp', 'Confidence', 'Type', 'ToWin', 'ClosingLine', 'CLV']:
+    for col in ['Notes', 'Book', 'Odds', 'Bet', 'Payout', 'Timestamp', 'Confidence', 'Type', 'ToWin', 'ClosingLine', 'CLV', 'PreflightCheck', 'PreflightNote']:
         if col in df.columns:
             df[col] = df[col].fillna('').astype(str)
 
@@ -269,6 +274,32 @@ def update_tracker(filepath):
     updated = 0
     still_pending = 0
 
+    # ── Pre-populate CLV for all pending rows (before game-status gating) ──
+    if HAS_ODDS_API:
+        for idx, row in df.iterrows():
+            if str(row['Result']).strip().upper() != 'PENDING':
+                continue
+            # Skip if CLV already populated
+            if str(df.at[idx, 'ClosingLine']).strip():
+                continue
+            away_nick = row['Away'].strip()
+            home_nick = row['Home'].strip()
+            closing = get_closing_line(away_nick, home_nick)
+            if closing is not None:
+                df.at[idx, 'ClosingLine'] = str(closing)
+                try:
+                    market = float(row['Market'])
+                    # CLV from bettor perspective: positive = you beat the close
+                    # AWAY pick: CLV = closing - market (more negative close = got better points)
+                    # HOME pick: CLV = market - closing (more negative close = gave fewer points)
+                    raw_clv = round(closing - market, 2)
+                    pick = str(row.get('Pick', '')).strip()
+                    home = str(row.get('Home', '')).strip()
+                    clv = -raw_clv if pick == home else raw_clv
+                    df.at[idx, 'CLV'] = str(clv)
+                except (ValueError, TypeError):
+                    pass
+
     for idx, row in df.iterrows():
         if str(row['Result']).strip().upper() != 'PENDING':
             continue
@@ -296,8 +327,8 @@ def update_tracker(filepath):
             if payout is not None:
                 df.at[idx, 'Payout'] = f"{payout:.2f}"
 
-        # ── CLV: Closing Line Value ──
-        if HAS_ODDS_API:
+        # ── CLV: Closing Line Value (fill if not already populated above) ──
+        if HAS_ODDS_API and not str(df.at[idx, 'ClosingLine']).strip():
             away_nick = row['Away'].strip()
             home_nick = row['Home'].strip()
             closing = get_closing_line(away_nick, home_nick)
@@ -305,9 +336,11 @@ def update_tracker(filepath):
                 df.at[idx, 'ClosingLine'] = str(closing)
                 try:
                     market = float(row['Market'])
-                    # CLV = how much better your line was vs closing
-                    # Positive CLV = you got a better number than the market settled on
-                    clv = round(closing - market, 2)
+                    # CLV from bettor perspective (positive = beat the close)
+                    raw_clv = round(closing - market, 2)
+                    pick = str(row.get('Pick', '')).strip()
+                    home = str(row.get('Home', '')).strip()
+                    clv = -raw_clv if pick == home else raw_clv
                     df.at[idx, 'CLV'] = str(clv)
                 except (ValueError, TypeError):
                     pass

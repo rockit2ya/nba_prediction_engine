@@ -188,6 +188,7 @@ def get_closing_line(away_nickname, home_nickname):
     """
     Look up the cached closing line for a matchup.
     Returns the consensus spread (from home team perspective) or None.
+    Accepts either nicknames ("Cavaliers") or full names ("Cleveland Cavaliers").
     """
     cache = load_cache()
     # Try exact key
@@ -196,10 +197,17 @@ def get_closing_line(away_nickname, home_nickname):
     if entry:
         return entry.get('consensus_line')
 
-    # Try case-insensitive match
+    away_lower = away_nickname.lower()
+    home_lower = home_nickname.lower()
+
     for k, v in cache.get('games', {}).items():
-        if (v.get('away', '').lower() == away_nickname.lower() and
-                v.get('home', '').lower() == home_nickname.lower()):
+        # Match against nicknames
+        if (v.get('away', '').lower() == away_lower and
+                v.get('home', '').lower() == home_lower):
+            return v.get('consensus_line')
+        # Match against full team names
+        if (v.get('away_full', '').lower() == away_lower and
+                v.get('home_full', '').lower() == home_lower):
             return v.get('consensus_line')
 
     return None

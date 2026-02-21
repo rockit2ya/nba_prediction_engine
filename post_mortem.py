@@ -31,6 +31,7 @@ TEAM_ALIASES = {
     'blazers': 'trail blazers',
     'sixers': '76ers',
     'wolves': 'timberwolves',
+    'la clippers': 'los angeles clippers',
 }
 
 def names_match(a, b):
