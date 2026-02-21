@@ -86,6 +86,22 @@ When ESPN replaces scheduled times with live scores mid-game, the scraper stored
 
 ### Fixed
 
+#### Rest Penalty Scraper — Missing Teams
+
+The rest penalty scraper only emitted teams found on ESPN's yesterday/today scoreboards. Teams that didn't play yesterday *and* aren't playing today were completely absent from the cache, causing `rest.team_count` preflight failures on days with fewer games (e.g. 18/30 instead of 30/30).
+
+| File | Change |
+|---|---|
+| `rest_penalty_scraper.py` | After scraping yesterday/today scoreboards, backfill all 30 canonical teams from `SHORT_TO_FULL_TEAM` with `REST_PENALTY=0` for any team not on either scoreboard |
+
+#### Star Tax — Outlier Impact Clamp (±15)
+
+Low-minute / garbage-time players can have extreme on/off plus-minus values (e.g. Noa Essengue at -111.4). When such a player is injured ("Out for the season", weight=1.0), the unclamped value dominated the entire fair line calculation — producing absurd spreads like Chicago -62.98 vs Detroit.
+
+| File | Change |
+|---|---|
+| `nba_analytics.py` | `get_star_tax_weighted()` now clamps each player's raw on/off impact to `±15` before applying the status weight. Elite stars rarely exceed ±12, so ±15 is a generous ceiling that filters noise while preserving real star impact |
+
 #### Team Name Normalization — "LA Clippers" Catastrophe
 
 The NBA.com stats API returns `"LA Clippers"` while every other data source uses `"Los Angeles Clippers"`. This inconsistency silently broke team lookups across 5 files, causing star tax, rest penalties, edge analysis, schedule matching, and post-mortem comparisons to silently fail for Clippers games.

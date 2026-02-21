@@ -62,14 +62,20 @@ def scrape_rest_penalty():
                 teams_playing_today.add(team_name)
 
     # Calculate rest penalty: B2B = played yesterday AND playing today
+    # Start with ALL 30 teams so teams that aren't on either scoreboard still appear
     penalty_data = []
-    all_teams = teams_playing_today | teams_played_yesterday
-    for team in all_teams:
+    all_canonical = set(SHORT_TO_FULL_TEAM.values())  # 30 canonical names
+    scraped_teams = teams_playing_today | teams_played_yesterday
+    for team in scraped_teams:
+        full_team_name = SHORT_TO_FULL_TEAM.get(team, team)
+        all_canonical.discard(full_team_name)  # handled via scrape
         is_b2b = team in teams_played_yesterday and team in teams_playing_today
         penalty = -2.5 if is_b2b else 0
-        full_team_name = SHORT_TO_FULL_TEAM.get(team, team)
         last_game_date = str(yesterday) if team in teams_played_yesterday else ''
         penalty_data.append({'TEAM_NAME': full_team_name, 'LAST_GAME_DATE': last_game_date, 'REST_PENALTY': penalty})
+    # Fill remaining teams (didn't play yesterday or today) with 0 penalty
+    for full_name in sorted(all_canonical):
+        penalty_data.append({'TEAM_NAME': full_name, 'LAST_GAME_DATE': '', 'REST_PENALTY': 0})
     df = pd.DataFrame(penalty_data)
     timestamp = datetime.now().isoformat()
     # Write CSV with timestamp as header comment

@@ -170,9 +170,12 @@ def get_news():
 def get_star_tax_weighted(team_id, out_players):
     """Calculates player impact using cached On-Off splits.
     Reads from nba_star_tax_cache.json (prefetched by star_tax_prefetch.py).
-    Supports both player-name keyed (Selenium) and player-ID keyed (nba_api) caches."""
+    Supports both player-name keyed (Selenium) and player-ID keyed (nba_api) caches.
+    Individual player impacts are clamped to ±15 to suppress noise from
+    low-minute/garbage-time players with extreme on/off splits."""
     if not out_players:
         return 0
+    IMPACT_CAP = 15  # max per-player on/off impact — realistic ceiling for stars
     weights = {'out': 1.0, 'doubtful': 0.9, 'questionable': 0.5, 'game time decision': 0.5, 'probable': 0.1, 'day-to-day': 0.5}
     total_tax = 0
     try:
@@ -213,7 +216,8 @@ def get_star_tax_weighted(team_id, out_players):
                 pm = player_impacts.get(p_name)
 
             if pm is not None:
-                total_tax += (float(pm) * weight)
+                clamped = max(-IMPACT_CAP, min(IMPACT_CAP, float(pm)))
+                total_tax += (clamped * weight)
 
         return round(total_tax / 2, 2)
     except Exception as e:
