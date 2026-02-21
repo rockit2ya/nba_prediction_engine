@@ -75,6 +75,15 @@ New `[V]` command in the engine UI audits ALL historical bet trackers for intern
 | `nba_engine_ui.py` | Added `validate_historical_bets()` function and `[V]` menu command                  |
 | `preflight_check.py` | `check_bet_tracker()` now scans ALL trackers for conformance (not just today's)    |
 
+#### Scoreboard UX — Live Game Display & CLV Fetch Prompt
+
+When ESPN replaces scheduled times with live scores mid-game, the scraper stored empty time strings and truncated team names (e.g. "LA" for Clippers, "Los Angeles" for Lakers). This caused blank status fields, "TBD" CLV labels for games already in progress, and a confusing "→ Run fetch" prompt even when odds were already fresh.
+
+| File | Change |
+|---|---|
+| `schedule_scraper.py` | Added `"LA"` → Clippers and `"Los Angeles"` → Lakers to `CITY_TO_FULL`; added abbreviation fallback in `_parse_espn_next_data()` |
+| `nba_engine_ui.py` | `load_schedule_for_date()` now normalizes names via `normalize_team()` and strips whitespace; empty status shows `⏳ Live`; CLV section shows "CLV locked (in progress)" for live games; fetch suggestion suppressed when odds are `✅ Fresh` |
+
 ### Fixed
 
 #### Team Name Normalization — "LA Clippers" Catastrophe
