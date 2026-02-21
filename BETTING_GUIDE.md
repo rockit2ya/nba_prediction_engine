@@ -38,6 +38,12 @@ The script checks all 8 data feeds for freshness, value ranges, and team name co
 python preflight_check.py && python nba_engine_ui.py
 ```
 
+**Pre-tipoff chain** (fetch latest odds & injuries → validate → launch in one shot):
+
+```bash
+./fetch_all_nba_data.sh odds,injuries && python preflight_check.py && python nba_engine_ui.py
+```
+
 ### 3. Run the Prediction Engine
 
 ```bash
@@ -316,7 +322,9 @@ For split slates (e.g., 7 PM ET + 10 PM ET tips), run `./fetch_all_nba_data.sh o
   7. Enter sportsbook, odds, bet amount
 
   ── PRE-TIPOFF (10-15 min before first tip) ─────────────
-  8. RUN: ./fetch_all_nba_data.sh odds,injuries (CLV + late scratches)
+  8. RUN one-liner:
+     ./fetch_all_nba_data.sh odds,injuries && python preflight_check.py && python nba_engine_ui.py
+     (fetches CLV + late scratches → validates → launches engine)
      ↓
   9. RUN: [P] Pre-Tipoff Review in engine UI
      → Shows injury changes, line movement, updated edge

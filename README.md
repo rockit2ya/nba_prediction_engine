@@ -160,9 +160,13 @@ Follow these steps to get the most out of the NBA Prediction Engine:
    - On success (0 failures), today's bet tracker is **auto-stamped** with the preflight timestamp and result. New bets logged via the engine are also auto-stamped from the saved status.
    - Use `--quick` to skip model spot-checks and bet tracker validation (data feeds + pipeline only).
    - Use `--backfill` to retroactively add preflight columns to historical trackers (notes that cache data is unavailable for past dates).
-   - **Tip:** Chain the preflight with the engine so it won't launch if validation fails:
+   - **Tip:** Chain commands so validation gates the engine launch:
      ```bash
      python preflight_check.py && python nba_engine_ui.py
+     ```
+   - **Pre-tipoff chain** (fetch latest odds & injuries → validate → launch in one shot):
+     ```bash
+     ./fetch_all_nba_data.sh odds,injuries && python preflight_check.py && python nba_engine_ui.py
      ```
 
 3. **Analyze Games and Generate Recommendations**
