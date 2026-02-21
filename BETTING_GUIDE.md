@@ -102,17 +102,17 @@ G9  Denver Nuggets         @ Portland Trail Blazers 10:00 PM
 
 **Additional Commands:**
 
-| Command | Action                                                                                             |
-| ------- | -------------------------------------------------------------------------------------------------- |
-| `G#`    | Analyze a today's game (e.g., `G1`, `G5`) — full analysis + bet logging                            |
-| `U`     | Browse upcoming games for the next 7 days (loops back after each analysis; `Q` to exit)            |
-| `U#`    | Analyze an upcoming game (e.g., `U1`, `U12`) — **preview mode**, no bet logging                    |
-| `B`     | View bet tracker history — select a day or all combined, see P&L summary (loops back; `Q` to exit) |
-| `P`     | Pre-Tipoff Review — compare fresh data against placed bets (injuries, line movement, action recs)  |
+| Command | Action                                                                                              |
+| ------- | --------------------------------------------------------------------------------------------------- |
+| `G#`    | Analyze a today's game (e.g., `G1`, `G5`) — full analysis + bet logging                             |
+| `U`     | Browse upcoming games for the next 7 days (loops back after each analysis; `Q` to exit)             |
+| `U#`    | Analyze an upcoming game (e.g., `U1`, `U12`) — **preview mode**, no bet logging                     |
+| `B`     | View bet tracker history — select a day or all combined, see P&L summary (loops back; `Q` to exit)  |
+| `P`     | Pre-Tipoff Review — compare fresh data against placed bets (injuries, line movement, action recs)   |
 | `V`     | Validate Bets — audit ALL trackers for math consistency, preflight coverage, and performance splits |
-| `C`     | Custom matchup — enter any two teams for analysis                                                  |
-| `R`     | Refresh all data caches (stats, injuries, news, rest, odds)                                        |
-| `Q`     | Quit                                                                                               |
+| `C`     | Custom matchup — enter any two teams for analysis                                                   |
+| `R`     | Refresh all data caches (stats, injuries, news, rest, odds)                                         |
+| `Q`     | Quit                                                                                                |
 
 ### 3. After Games — Update Results
 
@@ -205,7 +205,7 @@ The combined view prefixes each bet ID with the tracker date (e.g., `2026-02-11/
 
 ## � Validating Historical Bets
 
-Use the `[V]` command to audit ALL bet trackers for internal consistency. This answers the question: *"Were any of my bets placed on bad data?"*
+Use the `[V]` command to audit ALL bet trackers for internal consistency. This answers the question: _"Were any of my bets placed on bad data?"_
 
 **Why can't we re-run predictions?** Historical cache data (stats, injuries, rest, star tax, odds) is overwritten daily. We cannot recreate what the data looked like on a past date.
 
@@ -347,18 +347,18 @@ For split slates (e.g., 7 PM ET + 10 PM ET tips), run `./fetch_all_nba_data.sh o
 
 ## 📝 Key Files
 
-| File                         | Purpose                       | Update Frequency                   |
-| ---------------------------- | ----------------------------- | ---------------------------------- |
-| `nba_injuries.csv`           | Player injury status          | `./fetch_all_nba_data.sh injuries` |
-| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties        | `./fetch_all_nba_data.sh rest`     |
-| `nba_stats_cache.json`       | Team efficiency ratings       | `./fetch_all_nba_data.sh stats`    |
-| `odds_cache.json`            | Live spreads for CLV tracking | `./fetch_all_nba_data.sh odds`     |
-| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + preflight audit trail | Daily                              |
+| File                         | Purpose                                        | Update Frequency                   |
+| ---------------------------- | ---------------------------------------------- | ---------------------------------- |
+| `nba_injuries.csv`           | Player injury status                           | `./fetch_all_nba_data.sh injuries` |
+| `nba_rest_penalty_cache.csv` | Rest/fatigue penalties                         | `./fetch_all_nba_data.sh rest`     |
+| `nba_stats_cache.json`       | Team efficiency ratings                        | `./fetch_all_nba_data.sh stats`    |
+| `odds_cache.json`            | Live spreads for CLV tracking                  | `./fetch_all_nba_data.sh odds`     |
+| `bet_tracker_YYYY-MM-DD.csv` | Bets + results + CLV + preflight audit trail   | Daily                              |
 | `preflight_check.py`         | Pre-bet pipeline validation + tracker stamping | Run daily before betting           |
-| `schedule_scraper.py`        | Multi-source schedule tool    | On demand                          |
-| `bankroll.json`              | Bankroll config               | Set once, auto-maintained          |
-| `.env`                       | API keys (Odds API)           | Set once                           |
-| `text_to_image.py`           | Terminal → PNG screenshot     | On demand                          |
+| `schedule_scraper.py`        | Multi-source schedule tool                     | On demand                          |
+| `bankroll.json`              | Bankroll config                                | Set once, auto-maintained          |
+| `.env`                       | API keys (Odds API)                            | Set once                           |
+| `text_to_image.py`           | Terminal → PNG screenshot                      | On demand                          |
 
 ---
 
