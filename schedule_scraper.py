@@ -47,6 +47,8 @@ CITY_TO_FULL = {
     'Houston': 'Houston Rockets',      'Indiana': 'Indiana Pacers',
     'LA Clippers': 'Los Angeles Clippers', 'LA Lakers': 'Los Angeles Lakers',
     'Los Angeles Clippers': 'Los Angeles Clippers', 'Los Angeles Lakers': 'Los Angeles Lakers',
+    'LA': 'Los Angeles Clippers',              # ESPN in-progress short form
+    'Los Angeles': 'Los Angeles Lakers',         # ESPN in-progress short form
     'Memphis': 'Memphis Grizzlies',    'Miami': 'Miami Heat',
     'Milwaukee': 'Milwaukee Bucks',    'Minnesota': 'Minnesota Timberwolves',
     'New Orleans': 'New Orleans Pelicans', 'New York': 'New York Knicks',
@@ -292,10 +294,16 @@ def _parse_espn_next_data(data, target_date):
                 name = (team_info.get('displayName') or
                         team_info.get('shortDisplayName') or
                         team_info.get('abbreviation', ''))
+                resolved = normalize_team(name)
+                # If primary fields didn't resolve, try abbreviation (always unambiguous)
+                if resolved == name and team_info.get('abbreviation'):
+                    fallback = normalize_team(team_info['abbreviation'])
+                    if fallback != team_info['abbreviation']:
+                        resolved = fallback
                 if home_away == 'away':
-                    away_team = normalize_team(name)
+                    away_team = resolved
                 elif home_away == 'home':
-                    home_team = normalize_team(name)
+                    home_team = resolved
 
             if away_team and home_team:
                 time_str = event.get('status', {}).get('type', {}).get('shortDetail', '')

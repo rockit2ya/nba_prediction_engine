@@ -2,6 +2,7 @@ import os
 import csv
 import glob
 import json
+import re
 import subprocess
 import time
 from datetime import datetime, timedelta, date
@@ -55,11 +56,17 @@ def invalidate_schedule_cache():
 def load_schedule_for_date(target_date):
     """Load games for a date from the prefetched schedule cache.
     Returns (games_list, source_label).  Zero network calls."""
+    from schedule_scraper import normalize_team as _norm
     cache = _load_schedule_cache()
     date_key = target_date.isoformat()  # e.g. "2026-02-19"
     entry = cache.get('dates', {}).get(date_key)
     if entry and entry.get('games'):
-        games = [(g['away'], g['home'], g.get('time', '')) for g in entry['games']]
+        games = []
+        for g in entry['games']:
+            away = _norm(g['away'].strip()) if g.get('away') else g.get('away', '')
+            home = _norm(g['home'].strip()) if g.get('home') else g.get('home', '')
+            time_str = g.get('time', '').strip()
+            games.append((away, home, time_str))
         source = entry.get('source', 'Cache')
         return games, source
     return [], None
@@ -905,10 +912,18 @@ def run_ui():
                 for i, (away, home, status) in enumerate(games):
                     gid = f"G{i+1}"
                     schedule[gid] = (away, home)
-                    time_str = status.strip() if status.strip() else "TBD"
+                    raw_time = status.strip()
+                    # Detect valid time format vs in-progress / empty status
+                    _is_time = bool(raw_time and re.match(r'\d{1,2}:\d{2}\s*(?:AM|PM)', raw_time, re.IGNORECASE))
+                    if _is_time:
+                        time_str = raw_time
+                    elif raw_time:
+                        time_str = raw_time          # ESPN status text (e.g. score)
+                    else:
+                        time_str = "\u23f3 Live"     # Empty = in-progress (ESPN replaced time with score)
                     game_windows.setdefault(time_str, []).append(gid)
                     bet_tag = " 🎫" if gid in bets_placed else ""
-                    print(f"{gid:<4} {away:<24} @ {home:<24} {status}{bet_tag}")
+                    print(f"{gid:<4} {away:<24} @ {home:<24} {time_str}{bet_tag}")
 
                 # ── Legend ──
                 if bets_placed:
@@ -937,7 +952,11 @@ def run_ui():
                 for tip_dt, time_str, gids in window_infos:
                     gid_label = ", ".join(gids)
                     if tip_dt is None:
-                        print(f"  📈 {time_str} ({gid_label}): ⚠️  Tip-off TBD — fetch odds & injuries once time is set")
+                        if "\u23f3" in time_str or time_str == "\u23f3 Live":
+                            # In-progress games — no CLV action needed
+                            print(f"  📈 {time_str} ({gid_label}): CLV locked (in progress)")
+                        else:
+                            print(f"  📈 {time_str} ({gid_label}): ⚠️  Tip-off TBD — fetch odds & injuries once time is set")
                         continue
 
                     fetch_target = tip_dt - timedelta(minutes=15)
@@ -967,7 +986,8 @@ def run_ui():
                     if now < tip_dt:
                         has_any_upcoming = True
                         print(f"  📈 {time_str} ({gid_label}): CLV {odds_status}")
-                        print(f"     → Run at ~{fetch_time_str}: ./fetch_all_nba_data.sh odds,injuries")
+                        if not odds_status.startswith("✅"):
+                            print(f"     → Run at ~{fetch_time_str}: ./fetch_all_nba_data.sh odds,injuries")
                     else:
                         # Game already tipped off
                         print(f"  📈 {time_str} ({gid_label}): CLV {odds_status} (in progress)")
